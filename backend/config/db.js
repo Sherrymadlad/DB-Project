@@ -8,7 +8,7 @@ const dbConfig = {
   password: process.env.DB_PASSWORD,
   server: process.env.DB_SERVER,
   database: process.env.DB_NAME,
-  // port: 1433, 
+  //port: process.env.DB_PORT, 
   options: {
     encrypt: false, // Set to true if using Azure
     enableArithAbort: true,
