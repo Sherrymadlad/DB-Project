@@ -8,7 +8,7 @@ const UserPreferenceModel = {
         const result = await pool.request()
             .input('UserID', sql.Int, userId)
             .query(`
-            SELECT Name FROM Cuisines
+            SELECT Cuisines.CuisineID, Cuisines.Name, Cuisines.Description, UserPrefCuisines.UserID FROM Cuisines
             JOIN UserPrefCuisines ON Cuisines.CuisineID = UserPrefCuisines.CuisineID
             WHERE UserPrefCuisines.UserID = @UserID
             `);
