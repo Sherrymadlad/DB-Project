@@ -1,0 +1,164 @@
+const { sql, poolPromise } = require('../config/db');
+
+const ReservationModel = {
+  // Add a reservation
+  addReservation: async (userId, tableId, time, duration, people, request) => {
+    try {
+      const pool = await poolPromise;
+      await pool.request()
+        .input('UserID', sql.Int, userId)
+        .input('TableID', sql.Int, tableId)
+        .input('Time', sql.DateTime, time)
+        .input('Duration', sql.Int, duration)
+        .input('People', sql.Int, people)
+        .input('Request', sql.NVarChar(sql.MAX), request)
+        .execute('AddReservation');
+
+      return { message: 'Reservation added successfully' };
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  },
+
+  // Modify a reservation
+  modifyReservation: async (reservationId, userId, newTime, newDuration, newPeople, newRequest) => {
+    try {
+      const pool = await poolPromise;
+      const request = pool.request()
+        .input('ReservationID', sql.Int, reservationId)
+        .input('UserID', sql.Int, userId);
+
+      if (newTime) request.input('NewTime', sql.DateTime, newTime);
+      if (newDuration) request.input('NewDuration', sql.Int, newDuration);
+      if (newPeople) request.input('NewPeople', sql.Int, newPeople);
+      if (newRequest) request.input('NewRequest', sql.NVarChar(sql.MAX), newRequest);
+
+      await request.execute('ModifyReservation');
+
+      return { message: 'Reservation modified successfully' };
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  },
+
+  // Cancel a reservation
+  cancelReservation: async (reservationId, userId) => {
+    try {
+      const pool = await poolPromise;
+      await pool.request()
+        .input('ReservationID', sql.Int, reservationId)
+        .input('UserID', sql.Int, userId)
+        .execute('CancelReservation');
+
+      return { message: 'Reservation cancelled successfully' };
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  },
+
+  // Approve a reservation
+  approveReservation: async (reservationId, userId) => {
+    try {
+      const pool = await poolPromise;
+      await pool.request()
+        .input('ReservationID', sql.Int, reservationId)
+        .input('UserID', sql.Int, userId)
+        .execute('ApproveReservation');
+
+      return { message: 'Reservation approved successfully' };
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  },
+
+  // Complete a reservation
+  completeReservation: async (reservationId, userId) => {
+    try {
+      const pool = await poolPromise;
+      await pool.request()
+        .input('ReservationID', sql.Int, reservationId)
+        .input('UserID', sql.Int, userId)
+        .execute('CompleteReservation');
+
+      return { message: 'Reservation completed successfully' };
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  },
+
+  // View upcoming reservations for a user
+  viewUpcomingReservations: async (userId) => {
+    try {
+      const pool = await poolPromise;
+      const result = await pool.request()
+        .input('UserID', sql.Int, userId)
+        .execute('ViewUpcomingReservations');
+
+      return result.recordset;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  },
+
+  // View past reservations for a user
+  viewPastReservations: async (userId) => {
+    try {
+      const pool = await poolPromise;
+      const result = await pool.request()
+        .input('UserID', sql.Int, userId)
+        .execute('ViewPastReservations');
+
+      return result.recordset;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  },
+
+  // Get all reservations for a restaurant
+  getRestaurantReservations: async (restaurantId) => {
+    try {
+      const pool = await poolPromise;
+      const result = await pool.request()
+        .input('Restaurantid', sql.Int, restaurantId)
+        .execute('GetRestaurantReservations');
+
+      return result.recordset;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  },
+
+  // Get reservations with special requests
+  getReservationsWithRequests: async () => {
+    try {
+      const pool = await poolPromise;
+      const result = await pool.request()
+        .query(`
+          SELECT * FROM Reservations 
+          WHERE Request IS NOT NULL AND Request <> ''
+        `);
+
+      return result.recordset;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  },
+
+  // Process reservation payment
+  processPayment: async (reservationId, amount, method) => {
+    try {
+      const pool = await poolPromise;
+      await pool.request()
+        .input('ReservationID', sql.Int, reservationId)
+        .input('Amount', sql.Int, amount)
+        .input('Method', sql.NVarChar(10), method)
+        .execute('ProcessReservationPayment');
+
+      return { message: 'Payment processed successfully' };
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  }
+};
+
+module.exports = ReservationModel;
