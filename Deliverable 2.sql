@@ -16,17 +16,27 @@ CREATE PROCEDURE RegisterUser
     @Password NVARCHAR(16),
     @Email NVARCHAR(100),
     @PhoneNum NVARCHAR(13),
-    @Role NVARCHAR(10)
+    @Role NVARCHAR(10),
+    @ProfilePic VARBINARY(MAX) = NULL
 AS
 BEGIN
-    IF EXISTS (SELECT 1 FROM Users WHERE Username = @Username OR Email = @Email OR PhoneNum = @PhoneNum)
+    -- Check if the role is valid
+    IF NOT EXISTS (SELECT 1 FROM (VALUES ('Customer'), ('Admin'), ('Staff')) AS ValidRoles(Role) WHERE Role = @Role)
     BEGIN
-        RAISERROR ('User already exists with this id, email, username, or phone number.', 16, 1);
+        RAISERROR('Invalid role specified. Valid roles are: Customer, Admin, Staff.', 16, 1);
         RETURN;
     END
 
-    INSERT INTO Users (Name, Username, Password, Email, PhoneNum, Role) 
-    VALUES (@Name, @Username, @Password, @Email, @PhoneNum, @Role);
+    -- Check if user already exists with the same username, email, or phone number
+    IF EXISTS (SELECT 1 FROM Users WHERE Username = @Username OR Email = @Email OR PhoneNum = @PhoneNum)
+    BEGIN
+        RAISERROR('User already exists with this username, email, or phone number.', 16, 1);
+        RETURN;
+    END
+
+    -- Insert new user
+    INSERT INTO Users (Name, Username, Password, Email, PhoneNum, Role, ProfilePic) 
+    VALUES (@Name, @Username, @Password, @Email, @PhoneNum, @Role, @ProfilePic);
 END;
 GO
 
