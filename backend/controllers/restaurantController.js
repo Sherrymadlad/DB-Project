@@ -82,31 +82,17 @@ const RestaurantController = {
     }
   },
 
-  // Get restaurants by status
-  getRestaurantsByStatus: async (req, res) => {
-    const { status } = req.params;
+  // Search for restaurants with filters
+  searchRestaurants: async (req, res) => {
+    const { userId, searchTerm, filterBy, location, sortBy } = req.body;
     try {
-      const response = await RestaurantModel.getRestaurantsByStatus(status);
+      const response = await RestaurantModel.searchRestaurants({ userId, searchTerm, filterBy, location, sortBy });
       if (!response.success) {
         return res.status(404).json({ success: false, message: response.message });
       }
-      return res.status(200).json({ success: true, message: 'Restaurants fetched by status', data: response.data });
+      return res.status(200).json({ success: true, message: 'Restaurants fetched successfully', data: response.data });
     } catch (error) {
-      return res.status(500).json({ success: false, message: 'Error fetching restaurants by status', error: error.message });
-    }
-  },
-
-  // Get restaurants by cuisine
-  getRestaurantsByCuisine: async (req, res) => {
-    const { cuisineId } = req.params;
-    try {
-      const response = await RestaurantModel.getRestaurantsByCuisine(cuisineId);
-      if (!response.success) {
-        return res.status(404).json({ success: false, message: response.message });
-      }
-      return res.status(200).json({ success: true, message: 'Restaurants fetched by cuisine', data: response.data });
-    } catch (error) {
-      return res.status(500).json({ success: false, message: 'Error fetching restaurants by cuisine', error: error.message });
+      return res.status(500).json({ success: false, message: 'Error fetching searched restaurants', error: error.message });
     }
   },
 
@@ -260,6 +246,22 @@ const RestaurantController = {
         message: 'Error fetching restaurant images',
         error: error.message
       });
+    }
+  },
+
+  // Set restaurant status
+  setRestaurantStatus: async (req, res) => {
+    const { restaurantId, status } = req.body;
+    try {
+      const response = await RestaurantModel.setRestaurantStatus({ restaurantId, status });
+
+      if (!response.success) {
+        return res.status(400).json({ success: false, message: response.message });
+      }
+
+      return res.status(200).json({ success: true, message: response.message });
+    } catch (error) {
+      return res.status(500).json({ success: false, message: 'Error updating status', error: error.message });
     }
   }
 };
