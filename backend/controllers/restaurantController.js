@@ -1,4 +1,5 @@
 const RestaurantModel = require('../models/restaurantModel');
+const { validationResult } = require('express-validator');
 
 const RestaurantController = {
   // Get all restaurants
@@ -6,11 +7,11 @@ const RestaurantController = {
     try {
       const response = await RestaurantModel.getRestaurants();
       if (!response.success) {
-        return res.status(404).json({ message: response.message });
+        return res.status(404).json({ success: false, message: response.message });
       }
-      return res.status(200).json({ data: response.data });
+      return res.status(200).json({ success: true, message: 'Restaurants fetched successfully', data: response.data });
     } catch (error) {
-      return res.status(500).json({ message: 'Error fetching restaurants', error: error.message });
+      return res.status(500).json({ success: false, message: 'Error fetching restaurants', error: error.message });
     }
   },
 
@@ -20,11 +21,11 @@ const RestaurantController = {
     try {
       const response = await RestaurantModel.getRestaurantById(id);
       if (!response.success) {
-        return res.status(404).json({ message: response.message });
+        return res.status(404).json({ success: false, message: response.message });
       }
-      return res.status(200).json({ data: response.data });
+      return res.status(200).json({ success: true, message: 'Restaurant fetched successfully', data: response.data });
     } catch (error) {
-      return res.status(500).json({ message: 'Error fetching restaurant by ID', error: error.message });
+      return res.status(500).json({ success: false, message: 'Error fetching restaurant by ID', error: error.message });
     }
   },
 
@@ -32,17 +33,17 @@ const RestaurantController = {
   registerRestaurant: async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(400).json({ success: false, message: 'Validation errors', errors: errors.array() });
     }
 
     try {
       const response = await RestaurantModel.registerRestaurant(req.body);
       if (!response.success) {
-        return res.status(400).json({ message: response.message });
+        return res.status(400).json({ success: false, message: response.message });
       }
-      return res.status(201).json({ message: response.message });
+      return res.status(201).json({ success: true, message: 'Restaurant registered successfully' });
     } catch (error) {
-      return res.status(500).json({ message: 'Error registering restaurant', error: error.message });
+      return res.status(500).json({ success: false, message: 'Error registering restaurant', error: error.message });
     }
   },
 
@@ -50,32 +51,34 @@ const RestaurantController = {
   updateRestaurant: async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(400).json({ success: false, message: 'Validation errors', errors: errors.array() });
     }
 
     try {
       const response = await RestaurantModel.updateRestaurant(req.body);
       if (!response.success) {
-        return res.status(400).json({ message: response.message });
+        return res.status(400).json({ success: false, message: response.message });
       }
-      return res.status(200).json({ message: response.message });
+      return res.status(200).json({ success: true, message: 'Restaurant updated successfully' });
     } catch (error) {
-      return res.status(500).json({ message: 'Error updating restaurant', error: error.message });
+      return res.status(500).json({ success: false, message: 'Error updating restaurant', error: error.message });
     }
   },
 
   // Delete a restaurant
   deleteRestaurant: async (req, res) => {
-    const { UserID, RestaurantID } = req.body;
-
+    const RestaurantID = parseInt(req.params.id);
+    const { UserID } = req.body; // Or from req.user.id if using auth middleware
+  
+    if (!UserID || isNaN(RestaurantID)) {
+      return res.status(400).json({ success: false, message: 'UserID and valid RestaurantID are required' });
+    }
+  
     try {
       const response = await RestaurantModel.deleteRestaurant(UserID, RestaurantID);
-      if (!response.success) {
-        return res.status(400).json({ message: response.message });
-      }
-      return res.status(200).json({ message: response.message });
+      return res.status(200).json({ success: true, message: 'Restaurant deleted successfully' });
     } catch (error) {
-      return res.status(500).json({ message: 'Error deleting restaurant', error: error.message });
+      return res.status(500).json({ success: false, message: 'Error deleting restaurant', error: error.message });
     }
   },
 
@@ -85,11 +88,11 @@ const RestaurantController = {
     try {
       const response = await RestaurantModel.getRestaurantsByStatus(status);
       if (!response.success) {
-        return res.status(404).json({ message: response.message });
+        return res.status(404).json({ success: false, message: response.message });
       }
-      return res.status(200).json({ data: response.data });
+      return res.status(200).json({ success: true, message: 'Restaurants fetched by status', data: response.data });
     } catch (error) {
-      return res.status(500).json({ message: 'Error fetching restaurants by status', error: error.message });
+      return res.status(500).json({ success: false, message: 'Error fetching restaurants by status', error: error.message });
     }
   },
 
@@ -99,149 +102,158 @@ const RestaurantController = {
     try {
       const response = await RestaurantModel.getRestaurantsByCuisine(cuisineId);
       if (!response.success) {
-        return res.status(404).json({ message: response.message });
+        return res.status(404).json({ success: false, message: response.message });
       }
-      return res.status(200).json({ data: response.data });
+      return res.status(200).json({ success: true, message: 'Restaurants fetched by cuisine', data: response.data });
     } catch (error) {
-      return res.status(500).json({ message: 'Error fetching restaurants by cuisine', error: error.message });
+      return res.status(500).json({ success: false, message: 'Error fetching restaurants by cuisine', error: error.message });
     }
   },
 
   // Assign an admin to a restaurant
   assignAdmin: async (req, res) => {
-    const { RestaurantID, UserID, TargetUserID } = req.body;
+    const { UserID, TargetUserID } = req.body;
+    const RestaurantID = parseInt(req.params.id);
     try {
       const response = await RestaurantModel.assignAdmin({ RestaurantID, UserID, TargetUserID });
       if (!response.success) {
-        return res.status(400).json({ message: response.message });
+        return res.status(400).json({ success: false, message: response.message });
       }
-      return res.status(200).json({ message: response.message });
+      return res.status(200).json({ success: true, message: 'Admin assigned successfully' });
     } catch (error) {
-      return res.status(500).json({ message: 'Error assigning admin', error: error.message });
+      return res.status(500).json({ success: false, message: 'Error assigning admin', error: error.message });
     }
   },
 
   // Remove an admin from a restaurant
   removeAdmin: async (req, res) => {
-    const { RestaurantID, UserID, TargetUserID } = req.body;
+    const { UserID, TargetUserID } = req.body;
+    const RestaurantID = parseInt(req.params.id);
     try {
       const response = await RestaurantModel.removeAdmin({ RestaurantID, UserID, TargetUserID });
       if (!response.success) {
-        return res.status(400).json({ message: response.message });
+        return res.status(400).json({ success: false, message: response.message });
       }
-      return res.status(200).json({ message: response.message });
+      return res.status(200).json({ success: true, message: 'Admin removed successfully' });
     } catch (error) {
-      return res.status(500).json({ message: 'Error removing admin', error: error.message });
+      return res.status(500).json({ success: false, message: 'Error removing admin', error: error.message });
     }
   },
 
-  // Assign a staff member to a restaurant
+  // Assign staff to a restaurant
   assignStaff: async (req, res) => {
-    const { RestaurantID, UserID, TargetUserID } = req.body;
+    const { UserID, TargetUserID } = req.body;
+    const RestaurantID = parseInt(req.params.id);
+
+    if (!UserID || !TargetUserID || isNaN(RestaurantID)) {
+      return res.status(400).json({ success: false, message: 'UserID, TargetUserID, and valid RestaurantID are required' });
+    }
+
     try {
       const response = await RestaurantModel.assignStaff({ RestaurantID, UserID, TargetUserID });
       if (!response.success) {
-        return res.status(400).json({ message: response.message });
+        return res.status(400).json({ success: false, message: response.message });
       }
-      return res.status(200).json({ message: response.message });
+      return res.status(200).json({ success: true, message: 'Staff assigned successfully' });
     } catch (error) {
-      return res.status(500).json({ message: 'Error assigning staff', error: error.message });
+      return res.status(500).json({ success: false, message: 'Error assigning staff', error: error.message });
     }
   },
 
-  // Remove a staff member from a restaurant
+  // Remove staff from a restaurant
   removeStaff: async (req, res) => {
-    const { RestaurantID, UserID, TargetUserID } = req.body;
+    const { UserID, TargetUserID } = req.body;
+    const RestaurantID = parseInt(req.params.id);
+
+    if (!UserID || !TargetUserID || isNaN(RestaurantID)) {
+      return res.status(400).json({ success: false, message: 'UserID, TargetUserID, and valid RestaurantID are required' });
+    }
+
     try {
       const response = await RestaurantModel.removeStaff({ RestaurantID, UserID, TargetUserID });
       if (!response.success) {
-        return res.status(400).json({ message: response.message });
+        return res.status(400).json({ success: false, message: response.message });
       }
-      return res.status(200).json({ message: response.message });
+      return res.status(200).json({ success: true, message: 'Staff removed successfully' });
     } catch (error) {
-      return res.status(500).json({ message: 'Error removing staff', error: error.message });
+      return res.status(500).json({ success: false, message: 'Error removing staff', error: error.message });
     }
   },
 
   // Add an image to a restaurant
   addImage: async (req, res) => {
-    const { RestaurantID, UserID } = req.body;
+    const { UserID } = req.body;
+    const RestaurantID = parseInt(req.params.id);
     const Image = req.file ? req.file.buffer : null; // Assuming you're using `multer` for image upload
 
     if (!Image) {
-      return res.status(400).json({ message: 'No image provided' });
+      return res.status(400).json({ success: false, message: 'No image provided' });
     }
 
     try {
       const response = await RestaurantModel.addImage({ RestaurantID, Image, UserID });
       if (!response.success) {
-        return res.status(400).json({ message: response.message });
+        return res.status(400).json({ success: false, message: response.message });
       }
-      return res.status(200).json({ message: response.message });
+      return res.status(200).json({ success: true, message: 'Image added successfully' });
     } catch (error) {
-      return res.status(500).json({ message: 'Error adding image', error: error.message });
+      return res.status(500).json({ success: false, message: 'Error adding image', error: error.message });
     }
   },
 
   // Delete an image from a restaurant
   deleteImage: async (req, res) => {
-    const { RestaurantID, ImageID, UserID } = req.body;
+    const { ImageID, UserID } = req.body;
+    const RestaurantID = parseInt(req.params.id);
     try {
       const response = await RestaurantModel.deleteImage({ RestaurantID, ImageID, UserID });
       if (!response.success) {
-        return res.status(400).json({ message: response.message });
+        return res.status(400).json({ success: false, message: response.message });
       }
-      return res.status(200).json({ message: response.message });
+      return res.status(200).json({ success: true, message: 'Image deleted successfully' });
     } catch (error) {
-      return res.status(500).json({ message: 'Error deleting image', error: error.message });
+      return res.status(500).json({ success: false, message: 'Error deleting image', error: error.message });
     }
   },
 
   // Get restaurant admins
   getRestaurantAdmins: async (req, res) => {
-    const { RestaurantID } = req.params;
+    const RestaurantID = req.params.id;
     try {
       const response = await RestaurantModel.getRestaurantAdmins(RestaurantID);
       if (!response.success) {
-        return res.status(404).json({ message: response.message });
+        return res.status(404).json({ success: false, message: response.message });
       }
-      return res.status(200).json({ data: response.data });
+      return res.status(200).json({ success: true, message: 'Restaurant admins fetched successfully', data: response.data });
     } catch (error) {
-      return res.status(500).json({ message: 'Error fetching restaurant admins', error: error.message });
+      return res.status(500).json({ success: false, message: 'Error fetching restaurant admins', error: error.message });
     }
   },
 
   // Get restaurant staff
   getRestaurantStaff: async (req, res) => {
-    const { RestaurantID } = req.params;
+    const RestaurantID = req.params.id;
     try {
       const response = await RestaurantModel.getRestaurantStaff(RestaurantID);
       if (!response.success) {
-        return res.status(404).json({ message: response.message });
+        return res.status(404).json({ success: false, message: response.message });
       }
-      return res.status(200).json({ data: response.data });
+      return res.status(200).json({ success: true, message: 'Restaurant staff fetched successfully', data: response.data });
     } catch (error) {
-      return res.status(500).json({ message: 'Error fetching restaurant staff', error: error.message });
+      return res.status(500).json({ success: false, message: 'Error fetching restaurant staff', error: error.message });
     }
   },
 
   // Get images for a restaurant
   getRestaurantImages: async (req, res) => {
-    const { id } = req.params;
+    const { RestaurantID } = req.params;
     try {
-      const images = await RestaurantModel.getRestaurantImages(id);
-      if (images.length > 0) {
-        return res.status(200).json({
-          success: true,
-          message: 'Images fetched successfully',
-          data: images
-        });
-      } else {
-        return res.status(404).json({
-          success: false,
-          message: 'No images found for this restaurant'
-        });
-      }
+      const images = await RestaurantModel.getRestaurantImages(RestaurantID);
+      return res.status(200).json({
+        success: true,
+        message: 'Images fetched successfully',
+        data: images || [] // Ensure empty list is returned even if undefined
+      });
     } catch (error) {
       return res.status(500).json({
         success: false,

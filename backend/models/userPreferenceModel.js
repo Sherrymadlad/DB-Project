@@ -56,7 +56,7 @@ const UserPreferenceModel = {
         const result = await pool.request()
             .input('UserID', sql.Int, userId)
             .query(`
-            SELECT Name FROM Restaurants
+            SELECT Restaurants.RestaurantID, Restaurants.Name, Restaurants.Description, Restaurants.Location, Restaurants.PhoneNum, Restaurants.OperatingHoursStart, Restaurants.OperatingHoursEnd, Restaurants.Status, Restaurants.ProfilePic, UserPrefRests.UserID FROM Restaurants
             JOIN UserPrefRests ON Restaurants.RestaurantID = UserPrefRests.RestaurantID
             WHERE UserPrefRests.UserID = @UserID
             `);

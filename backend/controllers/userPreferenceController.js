@@ -21,7 +21,8 @@ exports.addCuisinePreference = async (req, res) => {
 
 exports.removeCuisinePreference = async (req, res) => {
   try {
-    const { userId, cuisineId } = req.body;
+    const userId = req.params.id;
+    const { cuisineId } = req.body;
     const result = await UserPreferenceModel.removeCuisinePreference(userId, cuisineId);
     res.status(200).json(result);
   } catch (err) {
@@ -50,7 +51,8 @@ exports.addRestaurantPreference = async (req, res) => {
 
 exports.removeRestaurantPreference = async (req, res) => {
   try {
-    const { userId, restaurantId } = req.body;
+    const userId = req.params.id;
+    const { restaurantId } = req.body;
     const result = await UserPreferenceModel.removeRestaurantPreference(userId, restaurantId);
     res.status(200).json(result);
   } catch (err) {

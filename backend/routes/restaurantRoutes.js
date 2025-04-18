@@ -6,7 +6,7 @@ const restaurantController = require('../controllers/restaurantController');
 router.get('/restaurants', restaurantController.getRestaurants);
 router.post('/restaurants', restaurantController.registerRestaurant);
 router.get('/restaurants/:id', restaurantController.getRestaurantById);
-router.put('/restaurants/:id', restaurantController.updateRestaurant);
+router.put('/restaurants', restaurantController.updateRestaurant);
 router.delete('/restaurants/:id', restaurantController.deleteRestaurant);
 
 // Restaurant-specific data
