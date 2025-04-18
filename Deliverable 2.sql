@@ -535,24 +535,56 @@ BEGIN
 END;
 GO
 
---Retrieve restaurants by their status
-CREATE PROCEDURE GetRestaurantsByStatus
-    @Status NVARCHAR(10)
+--Retrive Restaurants by optional search, location, cuisine filters, favorite filters, and alphabetical or rating wise sorting
+CREATE PROCEDURE SearchRestaurants
+    @UserID INT,
+    @SearchTerm NVARCHAR(100) = NULL,
+    @SortBy NVARCHAR(20) = 'Name',      -- or 'Rating'
+    @FilterBy NVARCHAR(20) = NULL,      -- 'PreferredRestaurants', 'PreferredCuisines', or NULL
+    @Location NVARCHAR(100) = NULL      -- Optional location filter
 AS
 BEGIN
-    SELECT * FROM Restaurants WHERE Status = @Status;
-END;
-GO
+    SET NOCOUNT ON;
 
---Retrieve them by the cuisine(s) they're offering
-CREATE PROCEDURE GetRestaurantsByCuisine
-    @CuisineID INT
-AS
-BEGIN
-    SELECT R.*
+    SELECT 
+        R.RestaurantID,
+        R.Name,
+        R.Description,
+        R.Location,
+        R.PhoneNum,
+        R.OperatingHoursStart,
+        R.OperatingHoursEnd,
+        R.Status,
+        R.ProfilePic,
+        ISNULL(AVG(CAST(Rev.Rating AS FLOAT)), 0) AS AverageRating
     FROM Restaurants R
-    JOIN RestCuisines RC ON R.RestaurantID = RC.RestaurantID
-    WHERE RC.CuisineID = @CuisineID;
+    LEFT JOIN Reviews Rev ON R.RestaurantID = Rev.RestaurantID
+    WHERE 
+        R.Status = 'Open' AND
+        (@SearchTerm IS NULL OR R.Name LIKE '%' + @SearchTerm + '%') AND
+        (@Location IS NULL OR R.Location = @Location) AND
+        (
+            @FilterBy IS NULL OR
+            (
+                @FilterBy = 'PreferredRestaurants' AND EXISTS (
+                    SELECT 1 FROM UserPrefRests UR
+                    WHERE UR.UserID = @UserID AND UR.RestaurantID = R.RestaurantID
+                )
+            ) OR
+            (
+                @FilterBy = 'PreferredCuisines' AND EXISTS (
+                    SELECT 1 FROM RestCuisines RC
+                    JOIN UserPrefCuisines UPC ON RC.CuisineID = UPC.CuisineID
+                    WHERE RC.RestaurantID = R.RestaurantID AND UPC.UserID = @UserID
+                )
+            )
+        )
+    GROUP BY 
+        R.RestaurantID, R.Name, R.Description, R.Location, R.PhoneNum,
+        R.OperatingHoursStart, R.OperatingHoursEnd, R.Status, R.ProfilePic
+    ORDER BY 
+        CASE WHEN @SortBy = 'Rating' THEN ISNULL(AVG(CAST(Rev.Rating AS FLOAT)), 0) END DESC,
+        CASE WHEN @SortBy = 'Name' THEN R.Name END ASC;
 END;
 GO
 
@@ -735,6 +767,34 @@ GO
 --View Rest Images
 Select Image from RestImages
 where RestaurantID=@RestaurantID;
+GO
+
+CREATE PROCEDURE SetRestaurantStatus
+    @RestaurantID INT,
+    @Status NVARCHAR(10)  -- 'Open' or 'Closed'
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Validate status input
+    IF @Status NOT IN ('Open', 'Closed')
+    BEGIN
+        RAISERROR('Invalid status. Use "Open" or "Closed".', 16, 1);
+        RETURN;
+    END
+
+    -- Check if restaurant exists
+    IF NOT EXISTS (SELECT 1 FROM Restaurants WHERE RestaurantID = @RestaurantID)
+    BEGIN
+        RAISERROR('Restaurant with the given ID does not exist.', 16, 1);
+        RETURN;
+    END
+
+    -- Update the status
+    UPDATE Restaurants
+    SET Status = @Status
+    WHERE RestaurantID = @RestaurantID;
+END;
 GO
 
 

@@ -6,6 +6,7 @@ const restaurantController = require('../controllers/restaurantController');
 router.get('/restaurants', restaurantController.getRestaurants);
 router.post('/restaurants', restaurantController.registerRestaurant);
 router.get('/restaurants/:id', restaurantController.getRestaurantById);
+router.post('/restaurants/search', restaurantController.searchRestaurants);
 router.put('/restaurants', restaurantController.updateRestaurant);
 router.delete('/restaurants/:id', restaurantController.deleteRestaurant);
 
@@ -24,8 +25,7 @@ router.post('/restaurants/:id/remove-staff', restaurantController.removeStaff);
 router.post('/restaurants/:id/add-image', restaurantController.addImage);
 router.delete('/restaurants/:id/delete-image', restaurantController.deleteImage);
 
-// Get restaurants by status or cuisine
-router.get('/restaurants/status/:status', restaurantController.getRestaurantsByStatus);
-router.get('/restaurants/cuisine/:cuisineId', restaurantController.getRestaurantsByCuisine);
+// Set status of a restaurant to Open/Closed
+router.post('/restaurants/set-status', restaurantController.setRestaurantStatus);
 
 module.exports = router;
