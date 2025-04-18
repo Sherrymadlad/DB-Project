@@ -4,7 +4,7 @@ const ReservationModel = require('../models/reservationModel');
 exports.addReservation = async (req, res) => {
   try {
     const { userId, tableId, time, duration, people, request } = req.body;
-    const result = await ReservationModel.addReservation(userId, tableId, time, duration, people, request);
+    const result = await ReservationModel.addReservation(req.params.id,userId, tableId, time, duration, people, request);
     res.status(201).json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -55,20 +55,13 @@ exports.completeReservation = async (req, res) => {
   }
 };
 
-// View upcoming reservations for a user
-exports.viewUpcomingReservations = async (req, res) => {
+// View reservations for a user
+exports.viewReservations = async (req, res) => {
   try {
-    const result = await ReservationModel.viewUpcomingReservations(req.params.id);
-    res.status(200).json(result);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
+    const userId = parseInt(req.params.id);
+    const status = req.body.status || null;
 
-// View past reservations for a user
-exports.viewPastReservations = async (req, res) => {
-  try {
-    const result = await ReservationModel.viewPastReservations(req.params.id);
+    const result = await ReservationModel.viewReservations(userId, status);
     res.status(200).json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -78,17 +71,8 @@ exports.viewPastReservations = async (req, res) => {
 // Get all reservations for a restaurant
 exports.getRestaurantReservations = async (req, res) => {
   try {
-    const result = await ReservationModel.getRestaurantReservations(req.params.id);
-    res.status(200).json(result);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-// Get reservations with special requests
-exports.getReservationsWithRequests = async (req, res) => {
-  try {
-    const result = await ReservationModel.getReservationsWithRequests();
+    const { status } = req.body;
+    const result = await ReservationModel.getRestaurantReservations(req.params.id, status);
     res.status(200).json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });

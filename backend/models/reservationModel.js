@@ -2,10 +2,11 @@ const { sql, poolPromise } = require('../config/db');
 
 const ReservationModel = {
   // Add a reservation
-  addReservation: async (userId, tableId, time, duration, people, request) => {
+  addReservation: async (restaurantId, userId, tableId, time, duration, people, request) => {
     try {
       const pool = await poolPromise;
       await pool.request()
+        .input('RestaurantID', sql.Int, restaurantId)
         .input('UserID', sql.Int, userId)
         .input('TableID', sql.Int, tableId)
         .input('Time', sql.DateTime, time)
@@ -86,58 +87,38 @@ const ReservationModel = {
     }
   },
 
-  // View upcoming reservations for a user
-  viewUpcomingReservations: async (userId) => {
+  // View reservations for a user
+  viewReservations: async (userId, status = null) => {
     try {
       const pool = await poolPromise;
-      const result = await pool.request()
-        .input('UserID', sql.Int, userId)
-        .execute('ViewUpcomingReservations');
-
+      const request = pool.request()
+        .input('UserID', sql.Int, userId);
+  
+      if (status) {
+        request.input('Status', sql.NVarChar(10), status);
+      }
+  
+      const result = await request.execute('ViewReservations');
       return result.recordset;
     } catch (error) {
       throw new Error(error.message);
     }
-  },
-
-  // View past reservations for a user
-  viewPastReservations: async (userId) => {
-    try {
-      const pool = await poolPromise;
-      const result = await pool.request()
-        .input('UserID', sql.Int, userId)
-        .execute('ViewPastReservations');
-
-      return result.recordset;
-    } catch (error) {
-      throw new Error(error.message);
-    }
-  },
+  },  
 
   // Get all reservations for a restaurant
-  getRestaurantReservations: async (restaurantId) => {
+  getRestaurantReservations: async (restaurantId, status = null) => {
     try {
       const pool = await poolPromise;
-      const result = await pool.request()
-        .input('Restaurantid', sql.Int, restaurantId)
-        .execute('GetRestaurantReservations');
-
-      return result.recordset;
-    } catch (error) {
-      throw new Error(error.message);
-    }
-  },
-
-  // Get reservations with special requests
-  getReservationsWithRequests: async () => {
-    try {
-      const pool = await poolPromise;
-      const result = await pool.request()
-        .query(`
-          SELECT * FROM Reservations 
-          WHERE Request IS NOT NULL AND Request <> ''
-        `);
-
+      const request = pool.request()
+        .input('Restaurantid', sql.Int, restaurantId);
+  
+      if (status) {
+        request.input('Status', sql.NVarChar(10), status);
+      } else {
+        request.input('Status', sql.NVarChar(10), null);
+      }
+  
+      const result = await request.execute('GetRestaurantReservations');
       return result.recordset;
     } catch (error) {
       throw new Error(error.message);
