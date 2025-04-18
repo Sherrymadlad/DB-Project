@@ -71,7 +71,7 @@ exports.getAvailableTables = async (req, res) => {
 
 exports.getTablesByCapacity = async (req, res) => {
   try {
-    const { minCapacity } = req.query;
+    const { minCapacity } = req.body;
     const result = await TableModel.getTablesByCapacity(req.params.id, parseInt(minCapacity));
     res.status(200).json(result);
   } catch (err) {
