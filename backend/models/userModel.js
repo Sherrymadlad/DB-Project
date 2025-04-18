@@ -34,23 +34,28 @@ const UserModel = {
   },
 
   //Register user
-  createUser: async (name, username, password, email, phoneNum, role) => {
+  createUser: async (name, username, password, email, phoneNum, role, profilePic = null) => {
     try {
       const pool = await poolPromise;
-      await pool.request()
-        .input('Name', sql.NVarChar, name)
+      const request = pool.request();
+  
+      // Setting up inputs for the stored procedure
+      request.input('Name', sql.NVarChar, name)
         .input('Username', sql.NVarChar, username)
         .input('Password', sql.NVarChar, password)
         .input('Email', sql.NVarChar, email)
         .input('PhoneNum', sql.NVarChar, phoneNum)
         .input('Role', sql.NVarChar, role)
-        .execute('RegisterUser');
-
+        .input('ProfilePic', sql.VarBinary, profilePic);
+  
+      // Execute the stored procedure
+      await request.execute('RegisterUser');
+  
       return { message: 'User created successfully' };
     } catch (error) {
       throw new Error(error.message);
     }
-  },
+  },  
 
   //Delete User
   deleteUser: async (userId) => {
