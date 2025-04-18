@@ -5,6 +5,7 @@ require('dotenv').config();
 const userRoutes = require('./routes/userRoutes'); 
 const userPreferenceRoutes = require('./routes/userPreferenceRoutes'); 
 const restaurantRoutes = require('./routes/restaurantRoutes');
+const tableRoutes = require('./routes/tableRoutes');
 
 const app = express();
 app.use(express.json());
@@ -13,6 +14,7 @@ app.use(cors());
 app.use('/api', userRoutes);
 app.use('/api', userPreferenceRoutes);
 app.use('/api', restaurantRoutes);
+app.use('/api', tableRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server is running on http://localhost:${PORT}`));
