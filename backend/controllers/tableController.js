@@ -20,8 +20,8 @@ exports.checkTableAvailability = async (req, res) => {
 
 exports.addTable = async (req, res) => {
   try {
-    const { userId, tableId, capacity, description, restaurantId } = req.body;
-    const result = await TableModel.addTable(userId, tableId, capacity, description, restaurantId);
+    const { userId, capacity, description, restaurantId } = req.body;
+    const result = await TableModel.addTable(userId, capacity, description, restaurantId);
     res.status(201).json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });

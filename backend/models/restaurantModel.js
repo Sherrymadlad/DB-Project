@@ -36,14 +36,13 @@ const RestaurantModel = {
   registerRestaurant: async (data) => {
     try {
       const {
-        UserID, RestaurantID, Name, Description,
+        UserID, Name, Description,
         Location, PhoneNum, OperatingHoursStart,
         OperatingHoursEnd, ProfilePic
       } = data;
       const pool = await poolPromise;
       await pool.request()
         .input('UserID', sql.Int, UserID)
-        .input('RestaurantID', sql.Int, RestaurantID)
         .input('Name', sql.NVarChar(50), Name)
         .input('Description', sql.NVarChar(sql.MAX), Description)
         .input('Location', sql.NVarChar(100), Location)

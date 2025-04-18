@@ -1,10 +1,24 @@
-﻿-- ==========================
+﻿DROP TABLE IF EXISTS Payments;
+DROP TABLE IF EXISTS RestImages;
+DROP TABLE IF EXISTS RestCuisines;
+DROP TABLE IF EXISTS UserPrefCuisines;
+DROP TABLE IF EXISTS UserPrefRests;
+DROP TABLE IF EXISTS Reviews;
+DROP TABLE IF EXISTS Reservations;
+DROP TABLE IF EXISTS Tables;
+DROP TABLE IF EXISTS RestaurantStaff;
+DROP TABLE IF EXISTS RestaurantAdmins;
+DROP TABLE IF EXISTS Cuisines;
+DROP TABLE IF EXISTS Restaurants;
+DROP TABLE IF EXISTS Users;
+
+-- ==========================
 --  TABLE CREATION
 -- ==========================
 
 -- 1️ Users Table
 CREATE TABLE Users(
-    UserID INT PRIMARY KEY NOT NULL,
+    UserID INT IDENTITY(1,1) PRIMARY KEY,
     Name NVARCHAR(50) NOT NULL,
     Username NVARCHAR(20) NOT NULL,
     Password NVARCHAR(16) NOT NULL,
@@ -16,7 +30,7 @@ CREATE TABLE Users(
 
 -- 2️ Restaurants Table
 CREATE TABLE Restaurants(
-    RestaurantID INT PRIMARY KEY NOT NULL,
+    RestaurantID INT IDENTITY(1,1) PRIMARY KEY,
     Name NVARCHAR(50) NOT NULL,
     Description NVARCHAR(MAX) NOT NULL,
     Location NVARCHAR(100) NOT NULL,
@@ -43,7 +57,7 @@ CREATE TABLE RestaurantStaff (
 
 -- 4️ Tables Table
 CREATE TABLE Tables(
-    TableID INT PRIMARY KEY NOT NULL,
+    TableID INT IDENTITY(1,1) PRIMARY KEY,
     Capacity INT NOT NULL CHECK (Capacity > 0),
     Status NVARCHAR(10) CHECK (Status IN ('Reserved','Free','Occupied')) NOT NULL DEFAULT ('Free'),
     Description NVARCHAR(MAX),
@@ -52,7 +66,7 @@ CREATE TABLE Tables(
 
 -- 5️ Reservations Table
 CREATE TABLE Reservations (
-    ReservationID INT PRIMARY KEY NOT NULL,
+    ReservationID INT IDENTITY(1,1) PRIMARY KEY,
     UserID INT FOREIGN KEY REFERENCES Users(UserID) ON UPDATE CASCADE ON DELETE CASCADE,
     TableID INT FOREIGN KEY REFERENCES Tables(TableID) ON UPDATE CASCADE ON DELETE SET NULL,
     Time DATETIME DEFAULT GETDATE() NOT NULL,
@@ -65,7 +79,7 @@ CREATE TABLE Reservations (
 
 -- 6️ Reviews Table
 CREATE TABLE Reviews (
-    ReviewID INT PRIMARY KEY NOT NULL,
+    ReviewID INT IDENTITY(1,1) PRIMARY KEY,
     UserID INT FOREIGN KEY REFERENCES Users(UserID) ON UPDATE CASCADE ON DELETE SET NULL,
     RestaurantID INT FOREIGN KEY REFERENCES Restaurants(RestaurantID) ON UPDATE CASCADE ON DELETE CASCADE,
     Rating INT NOT NULL CHECK (Rating BETWEEN 1 AND 5) DEFAULT 1,
@@ -74,7 +88,7 @@ CREATE TABLE Reviews (
 
 -- 7️ Cuisines Table
 CREATE TABLE Cuisines(
-    CuisineID INT PRIMARY KEY NOT NULL,
+    CuisineID INT IDENTITY(1,1) PRIMARY KEY,
     Name NVARCHAR(50) NOT NULL UNIQUE,
     Description NVARCHAR(MAX) NOT NULL
 );
@@ -102,14 +116,14 @@ CREATE TABLE RestCuisines(
 
 -- 1️1 Restaurant Images Table
 CREATE TABLE RestImages(
-    ImageID INT PRIMARY KEY NOT NULL,
+    ImageID INT IDENTITY(1,1) PRIMARY KEY,
     RestaurantID INT FOREIGN KEY REFERENCES Restaurants(RestaurantID) ON UPDATE CASCADE ON DELETE CASCADE,
     Image VARBINARY(MAX) NULL
 );
 
 -- 1️2 Payments Table
 CREATE TABLE Payments(
-    PaymentID INT PRIMARY KEY NOT NULL,
+    PaymentID INT IDENTITY(1,1) PRIMARY KEY,
     ReservationID INT FOREIGN KEY REFERENCES Reservations(ReservationID) ON UPDATE CASCADE ON DELETE SET NULL,
     Amount INT NOT NULL CHECK (Amount > 0),
     PaymentDate DATETIME DEFAULT GETDATE() NOT NULL,
@@ -117,57 +131,80 @@ CREATE TABLE Payments(
     Method NVARCHAR(10) NOT NULL CHECK (Method IN ('Cash', 'Card'))
 );
 
+
 -- ==========================
 --  INSERT DUMMY DATA
 -- ==========================
 
--- 1️ Insert Users
-INSERT INTO Users (UserID, Name, Username, Password, Email, PhoneNum, Role, ProfilePic)
+-- 1 Insert Users
+INSERT INTO Users (Name, Username, Password, Email, PhoneNum, Role)
 VALUES 
-(1, 'Ali Khan', 'ali123', 'password1', 'ali@example.com', '03001234567', 'Customer', NULL),
-(2, 'Sara Ahmed', 'sara456', 'password2', 'sara@example.com', '03019876543', 'Admin', NULL),
-(3, 'Omar Sheikh', 'omar789', 'password3', 'omar@example.com', '03121234567', 'Staff', NULL);
+('Ali Khan', 'ali123', 'pass1', 'ali@gmail.com', '03001234567', 'Customer'),
+('Zara Sheikh', 'zara22', 'pass2', 'zara@gmail.com', '03019870000', 'Admin'),
+('Faisal Rehman', 'faisalr', 'pass3', 'faisal@domain.com', '03211234567', 'Staff'),
+('Hina Malik', 'hina88', 'pass4', 'hina@domain.com', '03110009988', 'Customer');
 
 -- 2️ Insert Restaurants
-INSERT INTO Restaurants (RestaurantID, Name, Description, Location, PhoneNum, OperatingHoursStart, OperatingHoursEnd, Status, ProfilePic)
+INSERT INTO Restaurants (Name, Description, Location, PhoneNum, OperatingHoursStart, OperatingHoursEnd)
 VALUES 
-(1, 'La Pinoz', 'Italian Cuisine', 'Karachi, Pakistan', '02134567890', '12:00:00', '23:00:00', 'Open', NULL),
-(2, 'BBQ Tonight', 'Traditional BBQ', 'Lahore, Pakistan', '02187654321', '11:00:00', '22:00:00', 'Open', NULL);
+('Taste of Italy', 'Authentic Italian Dishes', 'Islamabad', '02134561111', '11:00:00', '23:00:00'),
+('Spice Route', 'Desi Food with Modern Twist', 'Karachi', '02199998888', '10:00:00', '22:00:00'),
+('Sushi House', 'Fresh Japanese Sushi and Rolls', 'Lahore', '02188887777', '12:00:00', '21:00:00');
 
--- 3️ Insert RestaurantAdmins
-INSERT INTO RestaurantAdmins (RestaurantID, UserID) VALUES (1, 2), (2, 2);
+-- 3️ RestaurantAdmins
+INSERT INTO RestaurantAdmins (RestaurantID, UserID)
+VALUES (1, 2), (2, 2);
 
--- 3️.5 Insert RestaurantStaff
-INSERT INTO RestaurantStaff (RestaurantID, UserID) VALUES (1, 1), (2, 3);
+-- 3.5 RestaurantStaff
+INSERT INTO RestaurantStaff (RestaurantID, UserID)
+VALUES (1, 3), (2, 1), (3, 4);
 
 -- 4️ Insert Tables
-INSERT INTO Tables (TableID, Capacity, Status, Description, RestaurantID)
-VALUES (1, 4, 'Free', 'Near window', 1), (2, 6, 'Reserved', 'Private booth', 1), (3, 2, 'Occupied', 'Outdoor table', 2);
+INSERT INTO Tables (Capacity, Status, Description, RestaurantID)
+VALUES 
+(2, 'Free', 'Romantic 2-seater', 1),
+(6, 'Reserved', 'Large family table', 1),
+(4, 'Occupied', 'Near entrance', 2),
+(8, 'Free', 'Private room', 3);
 
 -- 5️ Insert Reservations
-INSERT INTO Reservations (ReservationID, UserID, TableID, Time, Duration, People, Request, Status)
-VALUES (1, 1, 1, '2025-03-29 19:00:00', 90, 2, 'Window seat preferred', 'Approved');
+INSERT INTO Reservations (UserID, TableID, Time, Duration, People, Request, Status)
+VALUES 
+(1, 1, '2025-04-20 18:00:00', 90, 2, 'Anniversary dinner', 'Approved'),
+(4, 2, '2025-04-21 19:30:00', 60, 4, 'Birthday surprise', 'Pending');
 
 -- 6️ Insert Reviews
-INSERT INTO Reviews (ReviewID, UserID, RestaurantID, Rating, Comment)
-VALUES (1, 1, 1, 5, 'Amazing food and service!'), (2, 1, 2, 4, 'Great BBQ, but a bit crowded.');
+INSERT INTO Reviews (UserID, RestaurantID, Rating, Comment)
+VALUES 
+(1, 1, 5, 'Loved the pasta!'),
+(4, 2, 3, 'Great ambiance, food was okay.'),
+(1, 3, 4, 'Sushi was fresh and tasty.');
 
 -- 7️ Insert Cuisines
-INSERT INTO Cuisines (CuisineID, Name, Description)
-VALUES (1, 'Italian', 'Pizza, Pasta, and more'), (2, 'BBQ', 'Traditional grilled meats');
+INSERT INTO Cuisines (Name, Description)
+VALUES 
+('Italian', 'Pizza, Pasta, Risotto'),
+('Desi', 'Biryani, Karahi, Naan'),
+('Japanese', 'Sushi, Ramen, Tempura'),
+('Mexican', 'Tacos, Burritos, Nachos');
 
--- 8️ Insert User Preferences for Restaurants
-INSERT INTO UserPrefRests (UserID, RestaurantID) VALUES (1, 1), (1, 2);
+-- 8️ User Preferred Restaurants
+INSERT INTO UserPrefRests (UserID, RestaurantID)
+VALUES (1, 1), (1, 2), (4, 3);
 
--- 9️ Insert User Preferences for Cuisines
-INSERT INTO UserPrefCuisines (UserID, CuisineID) VALUES (1, 1), (1, 2);
+-- 9️ User Preferred Cuisines
+INSERT INTO UserPrefCuisines (UserID, CuisineID)
+VALUES (1, 1), (1, 3), (4, 2), (4, 4);
 
--- 10 Insert Restaurant Cuisines
-INSERT INTO RestCuisines (CuisineID, RestaurantID) VALUES (1, 1), (2, 2);
+-- 10 Restaurant Cuisines
+INSERT INTO RestCuisines (CuisineID, RestaurantID)
+VALUES (1, 1), (2, 2), (3, 3), (4, 2);
 
 -- 1️1 Insert Restaurant Images
-INSERT INTO RestImages (ImageID, RestaurantID, Image) VALUES (1, 1, NULL), (2, 2, NULL);
+INSERT INTO RestImages (RestaurantID, Image) VALUES (1, NULL), (2, NULL), (3, NULL);
 
 -- 1️2 Insert Payments
-INSERT INTO Payments (PaymentID, ReservationID, Amount, PaymentDate, Status, Method)
-VALUES (1, 1, 3000, '2025-03-29 18:30:00', 'Completed', 'Card');
+INSERT INTO Payments (ReservationID, Amount, PaymentDate, Status, Method)
+VALUES 
+(1, 4500, '2025-04-20 17:45:00', 'Completed', 'Card'),
+(2, 3000, '2025-04-21 19:00:00', 'Pending', 'Cash');
