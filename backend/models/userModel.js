@@ -34,11 +34,10 @@ const UserModel = {
   },
 
   //Register user
-  createUser: async (userId, name, username, password, email, phoneNum, role) => {
+  createUser: async (name, username, password, email, phoneNum, role) => {
     try {
       const pool = await poolPromise;
       await pool.request()
-        .input('UserID', sql.Int, userId)
         .input('Name', sql.NVarChar, name)
         .input('Username', sql.NVarChar, username)
         .input('Password', sql.NVarChar, password)

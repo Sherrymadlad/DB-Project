@@ -30,12 +30,11 @@ const TableModel = {
   },
 
   //Add a new table to a restaurant
-  addTable: async (userId, tableId, capacity, description, restaurantId) => {
+  addTable: async (userId, capacity, description, restaurantId) => {
     try {
       const pool = await poolPromise;
       await pool.request()
         .input('UserID', sql.Int, userId)
-        .input('TableID', sql.Int, tableId)
         .input('Capacity', sql.Int, capacity)
         .input('Description', sql.NVarChar(sql.MAX), description)
         .input('RestaurantID', sql.Int, restaurantId)

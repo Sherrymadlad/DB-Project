@@ -2,11 +2,10 @@ const { sql, poolPromise } = require('../config/db');
 
 const PaymentModel = {
   // Insert a new payment
-  insertPayment: async (paymentId, reservationId, amount, status, method) => {
+  insertPayment: async (reservationId, amount, status, method) => {
     try {
       const pool = await poolPromise;
       await pool.request()
-        .input('PaymentID', sql.Int, paymentId)
         .input('ReservationID', sql.Int, reservationId)
         .input('Amount', sql.Int, amount)
         .input('Status', sql.NVarChar, status)
