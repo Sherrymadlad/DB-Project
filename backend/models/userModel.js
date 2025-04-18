@@ -161,9 +161,20 @@ const UserModel = {
       const result = await pool.request()
         .input('UserID', sql.Int, userId)
         .query(`
-          SELECT * FROM Restaurants
+          SELECT 
+              Restaurants.RestaurantID,
+              Restaurants.Name,
+              Restaurants.Description,
+              Restaurants.Location,
+              Restaurants.PhoneNum,
+              Restaurants.OperatingHoursStart,
+              Restaurants.OperatingHoursEnd,
+              Restaurants.Status,
+              Restaurants.ProfilePic,
+              RestaurantAdmins.UserID
+          FROM Restaurants
           JOIN RestaurantAdmins ON Restaurants.RestaurantID = RestaurantAdmins.RestaurantID
-          WHERE RestaurantAdmins.UserID = @UserID
+          WHERE RestaurantAdmins.UserID = @Userid;
         `);
 
       return result.recordset;
