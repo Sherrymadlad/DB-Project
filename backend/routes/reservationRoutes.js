@@ -3,7 +3,7 @@ const router = express.Router();
 const reservationController = require('../controllers/reservationController');
 
 // Basic reservation operations
-router.post('/reservations/:id', reservationController.addReservation);
+router.post('/reservations', reservationController.addReservation);
 router.put('/reservations', reservationController.modifyReservation);
 router.delete('/reservations', reservationController.cancelReservation);
 
@@ -11,11 +11,8 @@ router.delete('/reservations', reservationController.cancelReservation);
 router.post('/reservations/approve', reservationController.approveReservation);
 router.post('/reservations/complete', reservationController.completeReservation);
 
-// User-specific reservations
-router.get('/reservations/:id', reservationController.viewReservations);
-
-// Restaurant-specific reservations
-router.get('/restaurants/:id/reservations', reservationController.getRestaurantReservations);
+// Reservations for specific User/Restaurant
+router.get('/reservations', reservationController.viewReservations);
 
 // Payments
 router.post('/reservations/payment', reservationController.processPayment);

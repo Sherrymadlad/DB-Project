@@ -84,7 +84,7 @@ const RestaurantController = {
 
   // Search for restaurants with filters
   searchRestaurants: async (req, res) => {
-    const { userId, searchTerm, filterBy, location, sortBy } = req.body;
+    const { userId, searchTerm, filterBy, location, sortBy } = req.query;
     try {
       const response = await RestaurantModel.searchRestaurants({ userId, searchTerm, filterBy, location, sortBy });
       if (!response.success) {
@@ -262,6 +262,42 @@ const RestaurantController = {
       return res.status(200).json({ success: true, message: response.message });
     } catch (error) {
       return res.status(500).json({ success: false, message: 'Error updating status', error: error.message });
+    }
+  },
+
+  //Add cuisine
+  addCuisineToRestaurant: async (req, res) => {
+    const { RestaurantID, CuisineID } = req.body;
+    try {
+      const result = await RestaurantModel.addCuisineToRestaurant({ RestaurantID, CuisineID });
+      if (!result.success) return res.status(400).json(result);
+      return res.status(200).json({ success: true, message: result.message });
+    } catch (error) {
+      return res.status(500).json({ success: false, message: 'Error adding cuisine', error: error.message });
+    }
+  },
+
+  //Remove cuisine
+  removeCuisineFromRestaurant: async (req, res) => {
+    const { RestaurantID, CuisineID } = req.body;
+    try {
+      const result = await RestaurantModel.removeCuisineFromRestaurant({ RestaurantID, CuisineID });
+      if (!result.success) return res.status(400).json(result);
+      return res.status(200).json({ success: true, message: result.message });
+    } catch (error) {
+      return res.status(500).json({ success: false, message: 'Error removing cuisine', error: error.message });
+    }
+  },
+
+  //Get restaurant's offered cuisines
+  getCuisinesForRestaurant: async (req, res) => {
+    const { id } = req.params;
+    try {
+      const result = await RestaurantModel.getCuisinesForRestaurant(id);
+      if (!result.success) return res.status(404).json(result);
+      return res.status(200).json({ success: true, data: result.data });
+    } catch (error) {
+      return res.status(500).json({ success: false, message: 'Error fetching cuisines', error: error.message });
     }
   }
 };

@@ -264,7 +264,51 @@ const RestaurantModel = {
     } catch (error) {
       return { success: false, message: error.message };
     }
-  }
+  },
+
+  // Add a cuisine to a restaurant
+  addCuisineToRestaurant: async ({ RestaurantID, CuisineID }) => {
+    try {
+      const pool = await poolPromise;
+      await pool.request()
+        .input('RestaurantID', sql.Int, RestaurantID)
+        .input('CuisineID', sql.Int, CuisineID)
+        .execute('AddCuisineToRestaurant');
+      return { success: true, message: 'Cuisine added to restaurant successfully' };
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
+  },
+
+  // Remove a cuisine from a restaurant
+  removeCuisineFromRestaurant: async ({ RestaurantID, CuisineID }) => {
+    try {
+      const pool = await poolPromise;
+      await pool.request()
+        .input('RestaurantID', sql.Int, RestaurantID)
+        .input('CuisineID', sql.Int, CuisineID)
+        .execute('RemoveCuisineFromRestaurant');
+      return { success: true, message: 'Cuisine removed from restaurant successfully' };
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
+  },
+
+  // Get all cuisines for a restaurant
+  getCuisinesForRestaurant: async (RestaurantID) => {
+    try {
+      const pool = await poolPromise;
+      const result = await pool.request()
+        .input('RestaurantID', sql.Int, RestaurantID)
+        .execute('GetCuisinesForRestaurant');
+      if (result.recordset.length === 0) {
+        return { success: false, message: 'No cuisines found for this restaurant' };
+      }
+      return { success: true, data: result.recordset };
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
+  }  
 };
 
 module.exports = RestaurantModel;

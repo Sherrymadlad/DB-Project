@@ -1,91 +1,86 @@
 const ReservationModel = require('../models/reservationModel');
 
-// Add a reservation
-exports.addReservation = async (req, res) => {
-  try {
-    const { userId, tableId, time, duration, people, request } = req.body;
-    const result = await ReservationModel.addReservation(req.params.id,userId, tableId, time, duration, people, request);
-    res.status(201).json(result);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
+module.exports = {
+  addReservation: async (req, res) => {
+    const { restaurantId, userId, tableId, time, duration, people, request: specialRequest } = req.body;
+    try {
+      const data = await ReservationModel.addReservation(
+        restaurantId, userId, tableId, new Date(time), duration, people, specialRequest || null
+      );
+      res.status(201).json({ success: true, message: data.message });
+    } catch (error) {
+      res.status(500).json({ success: false, message: 'Failed to add reservation', error: error.message });
+    }
+  },
 
-// Modify a reservation
-exports.modifyReservation = async (req, res) => {
-  try {
+  modifyReservation: async (req, res) => {
     const { reservationId, userId, newTime, newDuration, newPeople, newRequest } = req.body;
-    const result = await ReservationModel.modifyReservation(reservationId, userId, newTime, newDuration, newPeople, newRequest);
-    res.status(200).json(result);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
+    try {
+      const data = await ReservationModel.modifyReservation(
+        reservationId, userId,
+        newTime ? new Date(newTime) : null,
+        newDuration || null, newPeople || null, newRequest || null
+      );
+      res.status(200).json({ success: true, message: data.message });
+    } catch (error) {
+      res.status(500).json({ success: false, message: 'Failed to modify reservation', error: error.message });
+    }
+  },
 
-// Cancel a reservation
-exports.cancelReservation = async (req, res) => {
-  try {
+  cancelReservation: async (req, res) => {
     const { reservationId, userId } = req.body;
-    const result = await ReservationModel.cancelReservation(reservationId, userId);
-    res.status(200).json(result);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
+    try {
+      const data = await ReservationModel.cancelReservation(reservationId, userId);
+      res.status(200).json({ success: true, message: data.message });
+    } catch (error) {
+      res.status(500).json({ success: false, message: 'Failed to cancel reservation', error: error.message });
+    }
+  },
 
-// Approve a reservation
-exports.approveReservation = async (req, res) => {
-  try {
+  approveReservation: async (req, res) => {
     const { reservationId, userId } = req.body;
-    const result = await ReservationModel.approveReservation(reservationId, userId);
-    res.status(200).json(result);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
+    try {
+      const data = await ReservationModel.approveReservation(reservationId, userId);
+      res.status(200).json({ success: true, message: data.message });
+    } catch (error) {
+      res.status(500).json({ success: false, message: 'Failed to approve reservation', error: error.message });
+    }
+  },
 
-// Complete a reservation
-exports.completeReservation = async (req, res) => {
-  try {
+  completeReservation: async (req, res) => {
     const { reservationId, userId } = req.body;
-    const result = await ReservationModel.completeReservation(reservationId, userId);
-    res.status(200).json(result);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
+    try {
+      const data = await ReservationModel.completeReservation(reservationId, userId);
+      res.status(200).json({ success: true, message: data.message });
+    } catch (error) {
+      res.status(500).json({ success: false, message: 'Failed to complete reservation', error: error.message });
+    }
+  },
 
-// View reservations for a user
-exports.viewReservations = async (req, res) => {
-  try {
-    const userId = parseInt(req.params.id);
-    const status = req.body.status || null;
+  viewReservations: async (req, res) => {
+    const { userId, restaurantId, status } = req.query;
+    try {
+      const data = await ReservationModel.viewReservations(
+        userId ? parseInt(userId) : null,
+        restaurantId ? parseInt(restaurantId) : null,
+        status ? status.toUpperCase() : null
+      );
+      if (!data.length)
+        return res.status(404).json({ success: false, message: 'No reservations found' });
 
-    const result = await ReservationModel.viewReservations(userId, status);
-    res.status(200).json(result);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
+      res.status(200).json({ success: true, message: 'Reservations retrieved', data });
+    } catch (error) {
+      res.status(500).json({ success: false, message: 'Error retrieving reservations', error: error.message });
+    }
+  },
 
-// Get all reservations for a restaurant
-exports.getRestaurantReservations = async (req, res) => {
-  try {
-    const { status } = req.body;
-    const result = await ReservationModel.getRestaurantReservations(req.params.id, status);
-    res.status(200).json(result);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-// Process payment for a reservation
-exports.processPayment = async (req, res) => {
-  try {
+  processPayment: async (req, res) => {
     const { reservationId, amount, method } = req.body;
-    const result = await ReservationModel.processPayment(reservationId, amount, method);
-    res.status(200).json(result);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    try {
+      const data = await ReservationModel.processPayment(reservationId, amount, method);
+      res.status(200).json({ success: true, message: data.message });
+    } catch (error) {
+      res.status(500).json({ success: false, message: 'Payment failed', error: error.message });
+    }
   }
 };
