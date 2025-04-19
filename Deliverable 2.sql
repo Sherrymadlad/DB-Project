@@ -562,7 +562,7 @@ BEGIN
     WHERE 
         R.Status = 'Open' AND
         (@SearchTerm IS NULL OR R.Name LIKE '%' + @SearchTerm + '%') AND
-        (@Location IS NULL OR R.Location = @Location) AND
+        (@Location IS NULL OR R.Location LIKE '%' + @Location + '%') AND
         (
             @FilterBy IS NULL OR
             (
@@ -579,6 +579,42 @@ BEGIN
                 )
             )
         )
+    GROUP BY 
+        R.RestaurantID, R.Name, R.Description, R.Location, R.PhoneNum,
+        R.OperatingHoursStart, R.OperatingHoursEnd, R.Status, R.ProfilePic
+    ORDER BY 
+        CASE WHEN @SortBy = 'Rating' THEN ISNULL(AVG(CAST(Rev.Rating AS FLOAT)), 0) END DESC,
+        CASE WHEN @SortBy = 'Name' THEN R.Name END ASC;
+END;
+GO
+
+--Retrieve Restaurants by search or location (Admins)
+CREATE OR ALTER PROCEDURE SearchRestaurantsAdmin
+    @UserID INT,
+    @SearchTerm NVARCHAR(100) = NULL,
+    @SortBy NVARCHAR(20) = 'Name',      -- or 'Rating'     
+    @Location NVARCHAR(100) = NULL      -- Optional location filter
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT 
+        R.RestaurantID,
+        R.Name,
+        R.Description,
+        R.Location,
+        R.PhoneNum,
+        R.OperatingHoursStart,
+        R.OperatingHoursEnd,
+        R.Status,
+        R.ProfilePic,
+        ISNULL(AVG(CAST(Rev.Rating AS FLOAT)), 0) AS AverageRating
+    FROM Restaurants R
+    LEFT JOIN Reviews Rev ON R.RestaurantID = Rev.RestaurantID
+    WHERE 
+        (@SearchTerm IS NULL OR R.Name LIKE '%' + @SearchTerm + '%') AND
+        (@Location IS NULL OR R.Location LIKE '%'+ @Location + '%') AND
+		(@UserID IN (Select UserID from RestaurantAdmins where UserID=@UserID))
     GROUP BY 
         R.RestaurantID, R.Name, R.Description, R.Location, R.PhoneNum,
         R.OperatingHoursStart, R.OperatingHoursEnd, R.Status, R.ProfilePic
@@ -656,6 +692,17 @@ JOIN RestaurantAdmins RA ON U.UserID = RA.UserID
 WHERE RA.RestaurantID = @Restaurantid;  
 GO
 
+--Number of admins for a specific restaurant
+CREATE OR ALTER PROCEDURE CountAdminsForRestaurant
+    @RestaurantID INT
+AS
+BEGIN
+    SELECT COUNT(*) AS TotalAdmins
+    FROM RestaurantAdmins
+    WHERE RestaurantID = @RestaurantID;
+END;
+GO
+
 -- Assign staff to a restaurant
 CREATE OR ALTER PROCEDURE AssignRestaurantStaff
     @RestaurantID INT,
@@ -722,6 +769,17 @@ SELECT U.UserID, U.Name, U.Email, U.PhoneNum
 FROM Users U  
 JOIN RestaurantStaff RS ON U.UserID = RS.UserID  
 WHERE RS.RestaurantID = @RestaurantID;
+GO
+
+--Count the number of staff for a restaurant
+CREATE OR ALTER PROCEDURE CountStaffForRestaurant
+    @RestaurantID INT
+AS
+BEGIN
+    SELECT COUNT(*) AS TotalStaff
+    FROM RestaurantStaff
+    WHERE RestaurantID = @RestaurantID;
+END;
 GO
 
 --Add Rest Image
@@ -884,6 +942,32 @@ BEGIN
     UPDATE Restaurants
     SET Status = @Status
     WHERE RestaurantID = @RestaurantID;
+END;
+GO
+
+--Get all tables by an optional status filter (staff only)
+CREATE OR ALTER PROCEDURE GetAllTablesByStaff
+    @UserID INT,
+    @RestaurantID INT,
+    @Status NVARCHAR(10) = NULL  -- Optional status filter
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Verify the user is a staff member of the restaurant
+    IF NOT EXISTS (
+        SELECT 1 FROM RestaurantStaff
+        WHERE UserID = @UserID AND RestaurantID = @RestaurantID
+    )
+    BEGIN
+        RAISERROR('Only staff of this restaurant can view tables.', 16, 1);
+        RETURN;
+    END
+
+    -- Return tables with optional status filtering
+    SELECT * FROM Tables
+    WHERE RestaurantID = @RestaurantID
+    AND (@Status IS NULL OR Status = @Status);
 END;
 GO
 
@@ -1122,6 +1206,84 @@ BEGIN
         WHERE RestaurantID = @RestaurantID
         AND Status = 'Occupied';
     END;
+END;
+GO
+
+--Check table's availability at a given time and for given duration
+CREATE OR ALTER PROCEDURE CheckTableAvailabilityAtTime
+    @TableID INT,
+    @StartTime DATETIME,
+    @DurationMinutes INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @EndTime DATETIME = DATEADD(MINUTE, @DurationMinutes, @StartTime);
+
+    -- Check if the table status is Free
+    IF EXISTS (
+        SELECT 1 
+        FROM Tables
+        WHERE TableID = @TableID AND Status = 'Free'
+    )
+    BEGIN
+        -- Check if there are no conflicting reservations
+        IF NOT EXISTS (
+            SELECT 1
+            FROM Reservations
+            WHERE TableID = @TableID
+              AND Status = 'Approved'
+              AND (
+                    (Time BETWEEN @StartTime AND @EndTime) OR
+                    (DATEADD(MINUTE, Duration, Time) BETWEEN @StartTime AND @EndTime) OR
+                    (@StartTime BETWEEN Time AND DATEADD(MINUTE, Duration, Time))
+                 )
+        )
+        BEGIN
+            SELECT 'Available' AS Availability;
+        END
+        ELSE
+        BEGIN
+            SELECT 'Not Available' AS Availability;
+        END
+    END
+    ELSE
+    BEGIN
+        SELECT 'Not Available' AS Availability;
+    END
+END;
+GO
+
+--Gives all tables which are available at a user's time
+CREATE OR ALTER PROCEDURE GetAvailableTablesByCapacityAndTime
+    @RestaurantID INT,
+    @MinCapacity INT,
+    @StartTime DATETIME,
+    @DurationMinutes INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @EndTime DATETIME = DATEADD(MINUTE, @DurationMinutes, @StartTime);
+
+    SELECT T.*
+    FROM Tables T
+    WHERE 
+        T.RestaurantID = @RestaurantID
+        AND T.Capacity >= @MinCapacity
+        AND T.Status = 'Free'
+        AND NOT EXISTS (
+            SELECT 1
+            FROM Reservations R
+            WHERE R.TableID = T.TableID
+              AND R.Status = 'Approved'
+              AND (
+                    (R.Time BETWEEN @StartTime AND @EndTime) OR
+                    (DATEADD(MINUTE, R.Duration, R.Time) BETWEEN @StartTime AND @EndTime) OR
+                    (@StartTime BETWEEN R.Time AND DATEADD(MINUTE, R.Duration, R.Time))
+                  )
+        )
+    ORDER BY T.Capacity ASC; -- You can change ordering if needed
 END;
 GO
 
@@ -1412,23 +1574,12 @@ BEGIN
 END;
 GO
 
---View reservations by status optionally for users or restaurants
-CREATE OR ALTER PROCEDURE ViewReservations
-    @UserID INT = NULL,            -- Optional: Filter by user
-    @RestaurantID INT = NULL,       -- Optional: Filter by restaurant
+--View reservations by status optionally for users 
+CREATE OR ALTER PROCEDURE ViewReservationsUser
+    @UserID INT,           
     @Status NVARCHAR(10) = NULL    -- Optional: Filter by status
 AS
 BEGIN
-    -- Check if RestaurantID is provided and exists
-    IF @RestaurantID IS NOT NULL
-    BEGIN
-        IF NOT EXISTS (SELECT 1 FROM Restaurants WHERE RestaurantID = @RestaurantID)
-        BEGIN
-            RAISERROR('Restaurant not found', 16, 1);
-            RETURN;
-        END
-    END
-
     -- Retrieve reservations
     SELECT r.ReservationID, r.UserID, r.TableID, r.Time, r.Duration, r.People, r.Request, r.Status,
            t.Capacity, t.Description AS TableDescription, res.Name AS RestaurantName
@@ -1436,10 +1587,84 @@ BEGIN
     JOIN Tables t ON r.TableID = t.TableID
     JOIN Restaurants res ON t.RestaurantID = res.RestaurantID
     WHERE 
-        (@UserID IS NULL OR r.UserID = @UserID) AND
-        (@RestaurantID IS NULL OR t.RestaurantID = @RestaurantID) AND
+         r.UserID = @UserID AND
         (@Status IS NULL OR r.Status = @Status)
     ORDER BY r.Time DESC;  -- Order by reservation time
+END;
+GO
+
+--Retrieve a specific restaurant's reservations with a search term on user's name and an optional filter for status 
+CREATE OR ALTER PROCEDURE ViewRestaurantReservations
+    @RestaurantID INT,
+    @SearchTerm NVARCHAR(100) = NULL,
+    @Status NVARCHAR(20) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM Restaurants WHERE RestaurantID = @RestaurantID)
+    BEGIN
+        RAISERROR('Restaurant not found.', 16, 1);
+        RETURN;
+    END
+
+    SELECT 
+        R.ReservationID,
+        R.UserID,
+        U.Name AS UserName,
+        R.TableID,
+        R.Time AS ReservationTime,
+        R.Status,
+        R.People AS NumGuests,
+        R.Request AS SpecialRequest
+    FROM Reservations R
+    JOIN Users U ON R.UserID = U.UserID
+    JOIN Tables T ON R.TableID = T.TableID
+    WHERE 
+        T.RestaurantID = @RestaurantID
+        AND (@SearchTerm IS NULL OR U.Name LIKE '%' + @SearchTerm + '%')
+        AND (@Status IS NULL OR R.Status = @Status)
+    ORDER BY 
+        R.Time DESC
+    OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY; -- optional paging
+END;
+GO
+
+--Get upcoming reservations (today's date) with an optional searchterm by user
+CREATE OR ALTER PROCEDURE GetTodayApprovedReservations
+    @RestaurantID INT,
+    @SearchTerm NVARCHAR(100) = NULL
+AS
+BEGIN
+    SELECT 
+        R.ReservationID,
+        R.UserID,
+        U.Name AS UserName,
+        T.RestaurantID,
+        R.Time AS ReservationTime,
+        R.Status
+    FROM Reservations R
+    JOIN Users U ON R.UserID = U.UserID
+    JOIN Tables T ON R.TableID = T.TableID
+    WHERE T.RestaurantID = @RestaurantID
+      AND R.Status = 'Approved'
+      AND CAST(R.Time AS DATE) = CAST(GETDATE() AS DATE)
+      AND (
+          @SearchTerm IS NULL OR U.Name LIKE '%' + @SearchTerm + '%'
+      )
+    ORDER BY R.Time ASC;
+END;
+GO
+
+--Count the number of reservations for a specific restaurant
+CREATE OR ALTER PROCEDURE CountReservationsForRestaurant
+    @RestaurantID INT
+AS
+BEGIN
+    SELECT COUNT(*) AS TotalReservations
+    FROM Reservations r
+    JOIN Tables t ON r.TableID = t.TableID
+    WHERE t.RestaurantID = @RestaurantID;
 END;
 GO
 
@@ -1506,6 +1731,17 @@ BEGIN
 END;
 GO
 
+--Count the amount of reviews for a given restaurant
+CREATE OR ALTER PROCEDURE CountReviewsForRestaurant
+    @RestaurantID INT
+AS
+BEGIN
+    SELECT COUNT(*) AS TotalReviews
+    FROM Reviews
+    WHERE RestaurantID = @RestaurantID;
+END;
+GO
+
 --Average rating of a restaurant
 SELECT RestaurantID, AVG(Rating) AS AverageRating
 FROM Reviews
@@ -1558,6 +1794,45 @@ GROUP BY r.RestaurantID, r.Name
 ORDER BY AvgRating DESC;
 GO
 
+--Sorts reviews of a specific user by ascending or descending
+CREATE OR ALTER PROCEDURE SortUserReviewsByRating
+    @UserID INT,
+    @SortOrder NVARCHAR(10) = 'Descending'  -- 'Ascending' or 'Descending'
+AS
+BEGIN
+    IF @SortOrder NOT IN ('Ascending', 'Descending')
+    BEGIN
+        RAISERROR ('Invalid sort order. Use ''Ascending'' or ''Descending''.', 16, 1);
+        RETURN;
+    END
+
+    SELECT * FROM Reviews
+    WHERE UserID = @UserID
+    ORDER BY 
+        CASE WHEN @SortOrder = 'Ascending' THEN Rating END ASC,
+        CASE WHEN @SortOrder = 'Descending' THEN Rating END DESC;
+END;
+GO
+
+--Sort reviews of a specific restaurant by ascending or descending
+CREATE OR ALTER PROCEDURE SortRestaurantReviewsByRating
+    @RestaurantID INT,
+    @SortOrder NVARCHAR(10) = 'Descending'  -- 'Ascending' or 'Descending'
+AS
+BEGIN
+    IF @SortOrder NOT IN ('Ascending', 'Descending')
+    BEGIN
+        RAISERROR ('Invalid sort order. Use ''Ascending'' or ''Descending''.', 16, 1);
+        RETURN;
+    END
+
+    SELECT * FROM Reviews
+    WHERE RestaurantID = @RestaurantID
+    ORDER BY 
+        CASE WHEN @SortOrder = 'Ascending' THEN Rating END ASC,
+        CASE WHEN @SortOrder = 'Descending' THEN Rating END DESC;
+END;
+GO
 
 --Cuisines
 
