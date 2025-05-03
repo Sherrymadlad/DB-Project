@@ -1,6 +1,10 @@
+import { useState } from "react";
 import Logo from "../assets/Logo.png";
+import { Link } from "react-router-dom";
 
 const Login = () => {
+  const [showPassword, setShowPassword] = useState(false);
+
   return (
     <div className="w-full h-screen flex flex-row text-theme-brown bg-gray-100">
 
@@ -16,7 +20,7 @@ const Login = () => {
             <div className="flex flex-col">
               <label className="text-sm mb-1">Username</label>
               <input
-                type="username"
+                type="text"
                 placeholder="e.g. Ali123"
                 className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-theme-pink"
               />
@@ -25,22 +29,34 @@ const Login = () => {
             <div className="flex flex-col">
               <label className="text-sm mb-1">Password</label>
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 placeholder="••••••••"
                 className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-theme-pink"
               />
+              <label className="text-xs mt-1 flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={showPassword}
+                  onChange={() => setShowPassword(!showPassword)}
+                  className="accent-theme-pink"
+                />
+                Show Password
+              </label>
             </div>
 
             <button
               type="submit"
-              className="mt-4 bg-theme-pink text-theme-cream rounded px-4 py-2 hover:bg-pink-700 transition"
+              className="mt-4 bg-theme-pink text-white rounded px-4 py-2 hover:bg-pink-700 transition"
             >
               Log In
             </button>
           </form>
 
           <p className="text-sm text-center">
-            Don't have an account? <a className="text-theme-pink hover:underline" href="#">Sign up</a>
+            Don't have an account?{" "}
+            <Link to="/Signup" className="text-theme-pink hover:underline">
+              Sign up
+            </Link>
           </p>
         </div>
       </div>
