@@ -22,7 +22,7 @@ const Sidebar = () => {
   ];
 
   return (
-    <div className="w-64 h-screen bg-white shadow-md flex flex-col justify-between">
+    <div className="w-64 h-screen bg-white shadow-md flex flex-col justify-between border-r border-theme-pink">
 
       <div>
         <div className="border-b p-2 border-theme-pink">
