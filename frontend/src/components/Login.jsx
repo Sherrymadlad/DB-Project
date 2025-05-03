@@ -54,7 +54,7 @@ const Login = () => {
 
           <p className="text-sm text-center">
             Don't have an account?{" "}
-            <Link to="/Signup" className="text-theme-pink hover:underline">
+            <Link to="/signup" className="text-theme-pink hover:underline">
               Sign up
             </Link>
           </p>
