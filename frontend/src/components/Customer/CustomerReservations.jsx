@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-const Reviews = () => {
+const CustomerReservations = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [restaurants, setRestaurants] = useState([
     { name: "The Spice Route", cuisine: "Indian", rating: 4.5 },
@@ -17,13 +17,16 @@ const Reviews = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 p-6 flex flex-col items-center">
-      {/* Buttons */}
-      <div className="w-full max-w-6xl mb-6 flex justify-start space-x-4">
+      {/* Navigation Buttons */}
+      <div className="w-full max-w-6xl mb-6 flex space-x-4">
         <button className="py-2 px-5 bg-theme-pink text-white text-base font-semibold rounded hover:bg-pink-600 transition duration-200">
-          Add Review
+          Add Reservation
         </button>
         <button className="py-2 px-5 bg-gray-300 text-gray-800 text-base font-semibold rounded hover:bg-gray-400 transition duration-200">
-          Past Reviews
+          Current Reservations
+        </button>
+        <button className="py-2 px-5 bg-gray-300 text-gray-800 text-base font-semibold rounded hover:bg-gray-400 transition duration-200">
+          Past Reservations
         </button>
       </div>
 
@@ -31,7 +34,7 @@ const Reviews = () => {
       <div className="w-full max-w-6xl mt-12 mb-8">
         <input
           type="text"
-          placeholder="Search restaurant to review"
+          placeholder="Search restaurant to reserve"
           className="w-full p-4 text-lg bg-white border border-gray-300 rounded text-center focus:outline-none focus:ring-2 focus:ring-theme-pink"
           value={searchQuery}
           onChange={handleSearchChange}
@@ -49,7 +52,7 @@ const Reviews = () => {
               key={index}
               className="p-6 h-68 bg-white border border-gray-300 rounded-lg shadow-md hover:bg-gray-100 transition duration-200 flex flex-col items-center"
             >
-              {/* Larger Profile Picture Placeholder */}
+              {/* Profile Picture Placeholder */}
               <div className="w-28 h-28 bg-gray-200 rounded-full mb-3 flex items-center justify-center text-gray-500">
                 <span className="text-sm">Image</span>
               </div>
@@ -59,7 +62,7 @@ const Reviews = () => {
               <p className="text-sm text-gray-600 mt-1 text-center">
                 Cuisine: {restaurant.cuisine}
               </p>
-              {/* Star and Rating */}
+              {/* Star and Rating Positioned Downwards */}
               <div className="mt-2 flex items-center space-x-2">
                 <span className="text-yellow-500 text-lg">⭐</span>
                 <span className="text-md font-semibold text-gray-800">
@@ -73,4 +76,4 @@ const Reviews = () => {
   );
 };
 
-export default Reviews;
+export default CustomerReservations;
