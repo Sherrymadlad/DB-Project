@@ -14,11 +14,18 @@ import CustomerAddReviews from "./components/Customer/AddReviews";
 import CustomerPastReviews from "./components/Customer/PastReviews";
 import CustomerPayments from "./components/Customer/Payments";
 import CustomerProfile from "./components/Customer/Profile";
+import AdminLayout from "./components/Admin/AdminLayout";
+import AdminRestaurants from "./components/Admin/Restaurants";
+import AdminNewRestaurant from "./components/Admin/NewRestaurant";
+import AdminProfile from "./components/Admin/Profile";
 
 function App() {
   return (
     <Router>
       <Routes>
+        <Route path="/" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+
         <Route path="/customer" element={<CustomerLayout />}>
           <Route path="restaurants" element={<CustomerRestaurants />} />
           <Route path="restaurants/details" element={<CustomerRestaurantDetails />} />
@@ -34,8 +41,11 @@ function App() {
           <Route path="profile" element={<CustomerProfile />} />
         </Route>
 
-        <Route path="/" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route path="restaurants" element={<AdminRestaurants />} />
+          <Route path="new/restaurant" element={<AdminNewRestaurant />} />
+          <Route path="profile" element={<AdminProfile />} />
+        </Route>
       </Routes>
     </Router>
   );
