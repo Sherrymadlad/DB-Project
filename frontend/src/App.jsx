@@ -5,7 +5,7 @@ import CustomerLayout from "./components/Customer/CustomerLayout";
 import CustomerRestaurants from "./components/Customer/Restaurants";
 import CustomerRestaurantDetails from "./components/Customer/RestaurantDetails";
 import CustomerRestaurantReserve from "./components/Customer/RestaurantReservation";
-import CustomerRestaurantReviews from "./components/Customer/RestaurantReviews"; 
+import CustomerRestaurantReviews from "./components/Customer/RestaurantReviews";
 import CustomerCurrentReservations from "./components/Customer/CurrentReservations";
 import CustomerPastReservations from "./components/Customer/PastReservations";
 import CustomerReservationConfirmation from "./components/Customer/ReservationConfirmation";
@@ -18,6 +18,9 @@ import AdminLayout from "./components/Admin/AdminLayout";
 import AdminRestaurants from "./components/Admin/Restaurants";
 import AdminNewRestaurant from "./components/Admin/NewRestaurant";
 import AdminProfile from "./components/Admin/Profile";
+import RestaurantAdmins from "./components/Admin/RestaurantAdmins"; // Import the new component
+import RestaurantStaff from "./components/Admin/RestaurantStaff"; // <-- Add this line
+
 
 function App() {
   return (
@@ -45,6 +48,8 @@ function App() {
           <Route path="restaurants" element={<AdminRestaurants />} />
           <Route path="new/restaurant" element={<AdminNewRestaurant />} />
           <Route path="profile" element={<AdminProfile />} />
+          <Route path="restaurant-admins" element={<RestaurantAdmins />} /> {/* New Route */}
+          <Route path="restaurant-staff" element={<RestaurantStaff />} /> 
         </Route>
       </Routes>
     </Router>
