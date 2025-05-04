@@ -15,6 +15,10 @@ const PastReviews = () => {
   );
 
   return (
+    <div classname="h-screen">
+    <div className="text-4xl text-theme-pink p-7 font-bold border-b">
+     Reviews
+   </div>
     <div className="min-h-screen bg-gray-50 p-6">
       {/* Buttons */}
       <div className="mb-6 flex space-x-4">
@@ -59,6 +63,7 @@ const PastReviews = () => {
           </div>
         ))}
       </div>
+    </div>
     </div>
   );
 };

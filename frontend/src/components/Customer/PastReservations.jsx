@@ -38,6 +38,10 @@ const PastReservations = () => {
       : reservations.filter((reservation) => reservation.status === filter);
 
   return (
+    <div classname="h-screen">
+    <div className="text-4xl text-theme-pink p-7 font-bold border-b">
+     Reservations
+   </div>
     <div className="min-h-screen bg-gray-50 p-6 flex flex-col items-center">
       {/* Navigation Buttons */}
       <div className="w-full max-w-6xl mb-6 flex space-x-4">
@@ -104,6 +108,7 @@ const PastReservations = () => {
           ))}
         </div>
       </div>
+    </div>
     </div>
   );
 };

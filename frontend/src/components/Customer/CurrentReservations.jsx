@@ -57,7 +57,12 @@ const CurrentReservations = () => {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 flex flex-col items-center text-theme-brown">
+    <div classname="h-screen">
+       <div className="text-4xl text-theme-pink p-7 font-bold border-b">
+        Reservations
+      </div>
+    <div className="h-full bg-gray-50 p-6 flex flex-col items-start text-theme-brown">
+    
       {/* Navigation Buttons */}
       <div className="w-full max-w-6xl mb-6 flex space-x-4">
         <Link to="/customer/reservations" className="py-2 px-5 bg-theme-pink text-white text-base font-semibold rounded">
@@ -69,8 +74,8 @@ const CurrentReservations = () => {
       </div>
 
       {/* Heading and Controls */}
-      <div className="w-full max-w-6xl mb-4">
-        <h2 className="text-xl font-bold text-theme-pink mb-4 mt-6">Your Current Reservations</h2>
+      <div className="w-full max-w-6xl mb-4 mt-6">
+        <h2 className="text-xl font-bold text-theme-pink mb-4">Your Current Reservations</h2>
         <div className="flex justify-between items-center">
           {/* Filter Dropdown */}
           <select
@@ -149,6 +154,7 @@ const CurrentReservations = () => {
           ))}
         </div>
       </div>
+    </div>
     </div>
   );
 };
