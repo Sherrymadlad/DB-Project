@@ -3,8 +3,15 @@ import Login from "./components/Login";
 import Signup from "./components/Signup";
 import CustomerLayout from "./components/Customer/CustomerLayout";
 import CustomerRestaurants from "./components/Customer/Restaurants";
-import CustomerReservations from "./components/Customer/Reservations";
-import CustomerReviews from "./components/Customer/Reviews";
+import CustomerRestaurantDetails from "./components/Customer/RestaurantDetails";
+import CustomerRestaurantReserve from "./components/Customer/RestaurantReservation";
+import CustomerRestaurantReviews from "./components/Customer/RestaurantReviews"; 
+import CustomerCurrentReservations from "./components/Customer/CurrentReservations";
+import CustomerPastReservations from "./components/Customer/PastReservations";
+import CustomerReservationConfirmation from "./components/Customer/ReservationConfirmation";
+import CustomerReservationPayment from "./components/Customer/ReservationPayment";
+import CustomerAddReviews from "./components/Customer/AddReviews";
+import CustomerPastReviews from "./components/Customer/PastReviews";
 import CustomerPayments from "./components/Customer/Payments";
 import CustomerProfile from "./components/Customer/Profile";
 
@@ -12,10 +19,17 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path = "/customer" element={<CustomerLayout />}>
+        <Route path="/customer" element={<CustomerLayout />}>
           <Route path="restaurants" element={<CustomerRestaurants />} />
-          <Route path="reservations" element={<CustomerReservations />} />
-          <Route path="reviews" element={<CustomerReviews />} />
+          <Route path="restaurants/details" element={<CustomerRestaurantDetails />} />
+          <Route path="restaurants/reserve" element={<CustomerRestaurantReserve />} />
+          <Route path="restaurants/reviews" element={<CustomerRestaurantReviews />} />
+          <Route path="reservations" element={<CustomerCurrentReservations />} />
+          <Route path="reservations/past" element={<CustomerPastReservations />} />
+          <Route path="reservations/confirmation" element={<CustomerReservationConfirmation />} />
+          <Route path="reservations/payment" element={<CustomerReservationPayment />} />
+          <Route path="reviews" element={<CustomerAddReviews />} />
+          <Route path="reviews/past" element={<CustomerPastReviews />} />
           <Route path="payments" element={<CustomerPayments />} />
           <Route path="profile" element={<CustomerProfile />} />
         </Route>

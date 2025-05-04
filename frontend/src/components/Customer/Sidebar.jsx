@@ -35,7 +35,7 @@ const Sidebar = () => {
               key={tab.name}
               to={tab.path}
               className={`shadow flex items-center gap-3 px-3 py-2 rounded-md text-theme-brown text-xl hover:bg-theme-pink hover:text-white transition ${
-                location.pathname === tab.path ? 'bg-theme-pink text-white' : ''
+                location.pathname.startsWith(tab.path) ? 'bg-theme-pink text-white' : ''
               }`}
             >
               {tab.icon}
