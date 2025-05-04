@@ -48,63 +48,73 @@ const RestaurantStaff = () => {
   };
 
   return (
-    <div className="h-screen flex flex-col relative">
-      <div className="text-4xl text-theme-pink p-7 font-bold border-b">
-        All Employees
+    <div className="min-h-screen w-full bg-gray-50 text-theme-brown relative">
+      {/* Navigation Buttons */}
+      <div className="flex gap-4 p-6">
+        <Link
+          className="bg-white border px-4 py-2 rounded shadow-md hover:bg-gray-100"
+          to="/admin/restaurants/details"
+        >
+          Details
+        </Link>
+        <Link
+          className="bg-white border px-4 py-2 rounded hover:bg-gray-100"
+          to="/admin/restaurants/reviews"
+        >
+          Reviews
+        </Link>
+        <Link
+          className="bg-white border px-4 py-2 rounded hover:bg-gray-100"
+          to="/admin/restaurants/admins"
+        >
+          Admins
+        </Link>
+        <Link
+          className="bg-theme-pink text-white px-4 py-2 rounded"
+          to="/admin/restaurants/staff"
+        >
+          Staff
+        </Link>
       </div>
-      <div className="min-h-screen bg-gray-50 p-6">
-        {/* Top Buttons */}
-        <div className="mb-6 flex space-x-4">
-          <Link
-            to="/restaurant-admins/all"
-            className="py-2 px-5 bg-gray-300 text-gray-800 text-base font-semibold rounded hover:bg-gray-400 transition duration-200"
-          >
-            All Admins
-          </Link>
-          <Link
-            to="/restaurant-admins/all-staff"
-            className="py-2 px-5 bg-theme-pink text-white text-base font-semibold rounded hover:bg-pink-600 transition duration-200"
-          >
-            All Staff
-          </Link>
-        </div>
 
-        {/* Staff List */}
-        <div className="space-y-3">
-          {staffMembers.map((staff, index) => (
-            <div
-              key={index}
-              className="p-3 bg-white border border-gray-300 rounded-lg shadow-md hover:shadow-lg transition duration-200 flex items-center justify-between"
-            >
-              <div className="flex items-center space-x-4">
-                <img
-                  src={staff.profilePic}
-                  alt={`${staff.name}'s Profile`}
-                  className="w-16 h-16 rounded-full object-cover"
-                />
-                <div className="flex flex-col sm:flex-row sm:space-x-20 text-sm sm:text-base">
-                  <span className="font-semibold text-gray-800 min-w-[250px] ml-4">
-                    {staff.name}
-                  </span>
-                  <span className="text-gray-600 min-w-[350px]">
-                    {staff.email}
-                  </span>
-                  <span className="text-gray-600 min-w-[250px]">
-                    {staff.phone}
-                  </span>
-                </div>
+      {/* All Staff Heading */}
+      <h2 className="text-2xl font-semibold text-theme-pink px-6 mt-6">All Staff</h2>
+
+      {/* Staff List */}
+      <div className="space-y-3 p-6">
+        {staffMembers.map((staff, index) => (
+          <div
+            key={index}
+            className="p-3 bg-white border border-gray-300 rounded-lg shadow-md hover:shadow-lg transition duration-200 flex items-center justify-between"
+          >
+            <div className="flex items-center space-x-4">
+              <img
+                src={staff.profilePic}
+                alt={`${staff.name}'s Profile`}
+                className="w-16 h-16 rounded-full object-cover"
+              />
+              <div className="flex flex-col sm:flex-row sm:space-x-20 text-sm sm:text-base">
+                <span className="font-semibold text-gray-800 min-w-[250px] ml-4">
+                  {staff.name}
+                </span>
+                <span className="text-gray-600 min-w-[350px]">
+                  {staff.email}
+                </span>
+                <span className="text-gray-600 min-w-[250px]">
+                  {staff.phone}
+                </span>
               </div>
-
-              <button
-                onClick={() => handleDelete(staff.name)}
-                className="text-red-500 hover:text-red-700 transition"
-                title="Delete Staff"
-              >
-                <TrashIcon className="w-6 h-6" />
-              </button>
             </div>
-          ))}
-        </div>
+
+            <button
+              onClick={() => handleDelete(staff.name)}
+              className="text-red-500 hover:text-red-700 transition"
+              title="Delete Staff"
+            >
+              <TrashIcon className="w-6 h-6" />
+            </button>
+          </div>
+        ))}
       </div>
 
       {/* Floating Add Button */}
@@ -124,7 +134,7 @@ const RestaurantStaff = () => {
           </h2>
           <input
             type="text"
-            placeholder="Enter staff name"
+            placeholder="Enter staff username"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             className="border border-gray-300 rounded px-4 py-2 w-full mb-4"

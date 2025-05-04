@@ -48,29 +48,40 @@ const RestaurantAdmins = () => {
   };
 
   return (
-    <div className="h-screen flex flex-col relative">
-      <div className="text-4xl text-theme-pink p-7 font-bold border-b">
-        All Employees
-      </div>
-      <div className="min-h-screen bg-gray-50 p-6 pb-20">
-        {/* Top Buttons */}
-        <div className="mb-6 flex space-x-4">
+    <div className="min-h-screen w-full bg-gray-50 text-theme-brown relative">
+        {/* Navigation Buttons */}
+        <div className="flex gap-4 p-6">
           <Link
-            to="/restaurant-admins/all"
-            className="py-2 px-5 bg-theme-pink text-white text-base font-semibold rounded hover:bg-pink-600 transition duration-200"
+            className="bg-white border px-4 py-2 rounded shadow-md hover:bg-gray-100"
+            to="/admin/restaurants/details"
           >
-            All Admins
+            Details
           </Link>
           <Link
-            to="/restaurant-admins/all-staff"
-            className="py-2 px-5 bg-gray-300 text-gray-800 text-base font-semibold rounded hover:bg-gray-400 transition duration-200"
+            className="bg-white border px-4 py-2 rounded hover:bg-gray-100"
+            to="/admin/restaurants/reviews"
           >
-            All Staff
+            Reviews
+          </Link>
+          <Link
+            className="bg-theme-pink text-white px-4 py-2 rounded"
+            to="/admin/restaurants/admins"
+          >
+            Admins
+          </Link>
+          <Link
+            className="bg-white border px-4 py-2 rounded hover:bg-gray-100"
+            to="/admin/restaurants/staff"
+          >
+            Staff
           </Link>
         </div>
 
+        {/* All Admins Heading */}
+        <h2 className="text-2xl font-semibold text-theme-pink px-6 mt-6">All Admins</h2>
+
         {/* Admins List */}
-        <div className="space-y-3">
+        <div className="space-y-3 p-6">
           {admins.map((admin, index) => (
             <div
               key={index}
@@ -101,7 +112,6 @@ const RestaurantAdmins = () => {
             </div>
           ))}
         </div>
-      </div>
 
       {/* Floating Add Button */}
       <button
@@ -118,7 +128,7 @@ const RestaurantAdmins = () => {
     <h2 className="text-xl font-semibold mb-4 text-gray-800 text-center">Add New Admin</h2>
     <input
       type="text"
-      placeholder="Enter admin name"
+      placeholder="Enter admin username"
       value={newName}
       onChange={(e) => setNewName(e.target.value)}
       className="border border-gray-300 rounded px-4 py-2 w-full mb-4"
