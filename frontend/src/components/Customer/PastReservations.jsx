@@ -1,5 +1,7 @@
 import React, { useState } from "react";
+import { Link
 
+ } from "react-router-dom";
 const PastReservations = () => {
   const [filter, setFilter] = useState("All"); // State for the selected filter
   const [reservations, setReservations] = useState([
@@ -39,15 +41,12 @@ const PastReservations = () => {
     <div className="min-h-screen bg-gray-50 p-6 flex flex-col items-center">
       {/* Navigation Buttons */}
       <div className="w-full max-w-6xl mb-6 flex space-x-4">
-        <button className="py-2 px-5 bg-gray-300 text-gray-800 text-base font-semibold rounded hover:bg-gray-400 transition duration-200">
-          Add Reservation
-        </button>
-        <button className="py-2 px-5 bg-gray-300 text-gray-800 text-base font-semibold rounded hover:bg-gray-400 transition duration-200">
+        <Link to="/customer/reservations" className="py-2 px-5 bg-gray-300 text-gray-800 text-base font-semibold rounded hover:bg-gray-400 transition duration-200">
           Current Reservations
-        </button>
-        <button className="py-2 px-5 bg-theme-pink text-white text-base font-semibold rounded">
+        </Link>
+        <Link to="/customer/reservations/past" className="py-2 px-5 bg-theme-pink text-white text-base font-semibold rounded">
           Past Reservations
-        </button>
+        </Link>
       </div>
 
       {/* Heading */}

@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 
 const ReservationPayment = () => {
   const restaurantName = "The Spice Route";
@@ -48,12 +49,13 @@ const ReservationPayment = () => {
 
         {/* Confirm Button */}
         <div className="mt-8">
-          <button
-            className="w-full py-3 bg-theme-pink text-white font-semibold rounded hover:bg-pink-600 transition duration-200"
+          <Link
+            to="/customer/reservations"
+            className="w-full py-3 flex items-center justify-center bg-theme-pink text-white font-semibold rounded hover:bg-pink-600 transition duration-200"
             onClick={handleConfirm}
           >
             Confirm Reservation
-          </button>
+          </Link>
         </div>
       </div>
     </div>

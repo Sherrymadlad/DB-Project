@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
+import { Link } from "react-router-dom";
 
-const Reservations = () => {
+const RestaurantReservation = () => {
   const restaurantName = "The Spice Route";
 
   const tables = [
@@ -31,13 +32,24 @@ const Reservations = () => {
     <div className="min-h-screen bg-gray-50 p-6 relative">
       {/* Navigation Buttons */}
       <div className="fixed top-6 left--1 flex gap-4 z-10">
-        <button className="px-4 py-2 rounded shadow-md bg-white border hover:bg-gray-100">
+        <Link
+          className="bg-white border px-4 py-2 rounded hover:bg-gray-100"
+          to="/customer/restaurants/details"
+        >
           Details
-        </button>
-        <button className="px-4 py-2 rounded bg-theme-pink text-white">Reserve</button> {/* Reserve button is always pink */}
-        <button className="px-4 py-2 rounded bg-white border hover:bg-gray-100">
+        </Link>
+        <Link
+          className="bg-theme-pink text-white px-4 py-2 rounded shadow-md"
+          to="/customer/restaurants/reserve"
+        >
+          Reserve
+        </Link>
+        <Link
+          className="bg-white border px-4 py-2 rounded hover:bg-gray-100"
+          to="/customer/restaurants/reviews"
+        >
           Reviews
-        </button>
+        </Link>
       </div>
 
       <h1 className="text-3xl font-bold text-theme-pink text-center mb-8 pt-20">
@@ -97,17 +109,26 @@ const Reservations = () => {
             <p className="text-sm text-gray-600 mb-3">
               <strong>Status:</strong> {table.available ? "Available" : "Unavailable"}
             </p>
-            <button
-              className={`w-full py-2 text-white rounded ${
+            <div
+              className={`w-full text-white rounded flex justify-center items-center ${
                 table.available
                   ? "bg-theme-pink hover:bg-pink-600"
                   : "bg-gray-300 cursor-not-allowed"
               }`}
-              onClick={() => {}}
-              disabled={!table.available}
             >
-              {table.available ? "Reserve" : "Unavailable"}
-            </button>
+              {table.available ? (
+                <Link
+                  to="/customer/reservations/confirmation"
+                  className="w-full h-full py-2 flex justify-center items-center"
+                >
+                  Reserve
+                </Link>
+              ) : (
+                <span className="w-full h-full py-2 flex justify-center items-center">
+                  Unavailable
+                </span>
+              )}
+            </div>
           </div>
         ))}
       </div>
@@ -115,4 +136,4 @@ const Reservations = () => {
   );
 };
 
-export default Reservations
+export default RestaurantReservation

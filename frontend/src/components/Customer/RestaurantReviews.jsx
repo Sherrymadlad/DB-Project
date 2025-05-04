@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import { StarIcon } from "@heroicons/react/24/solid";
 
 const StarRating = ({ rating }) => {
@@ -52,9 +53,24 @@ const RestaurantReviews = () => {
     <div className="p-6 max-w-3xl mx-auto mt-20"> {/* mt-20 to push content down */}
       {/* Navigation Buttons */}
       <div className="fixed top-6 left-70 flex gap-4 z-10">
-        <button className="bg-white border px-4 py-2 rounded hover:bg-gray-100">Details</button>
-        <button className="bg-white border px-4 py-2 rounded hover:bg-gray-100">Reserve</button>
-        <button className="bg-theme-pink text-white px-4 py-2 rounded hover:bg-pink-600">Reviews</button>
+        <Link
+          className="bg-white border px-4 py-2 rounded hover:bg-gray-100"
+          to="/customer/restaurants/details"
+        >
+          Details
+        </Link>
+        <Link
+          className="bg-white border px-4 py-2 rounded hover:bg-gray-100"
+          to="/customer/restaurants/reserve"
+        >
+          Reserve
+        </Link>
+        <Link
+          className="bg-theme-pink text-white px-4 py-2 rounded shadow-md"
+          to="/customer/restaurants/reviews"
+        >
+          Reviews
+        </Link>
       </div>
 
       <h1 className="text-3xl font-bold text-center text-theme-pink mb-6">

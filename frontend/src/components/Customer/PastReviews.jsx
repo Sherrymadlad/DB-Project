@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 
 const PastReviews = () => {
   const [sortOrder, setSortOrder] = useState("desc");
@@ -17,12 +18,12 @@ const PastReviews = () => {
     <div className="min-h-screen bg-gray-50 p-6">
       {/* Buttons */}
       <div className="mb-6 flex space-x-4">
-        <button className="py-2 px-5 bg-gray-300 text-gray-800 text-base font-semibold rounded hover:bg-gray-400 transition duration-200">
+        <Link to="/customer/reviews" className="py-2 px-5 bg-gray-300 text-gray-800 text-base font-semibold rounded hover:bg-gray-400 transition duration-200">
           Add Review
-        </button>
-        <button className="py-2 px-5 bg-theme-pink text-white text-base font-semibold rounded hover:bg-pink-600 transition duration-200">
+        </Link>
+        <Link to="/customer/reviews/past" className="py-2 px-5 bg-theme-pink text-white text-base font-semibold rounded hover:bg-pink-600 transition duration-200">
           Past Reviews
-        </button>
+        </Link>
       </div>
 
       {/* Sort Dropdown */}

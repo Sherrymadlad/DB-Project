@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 
 const CurrentReservations = () => {
   const [reservations, setReservations] = useState([
@@ -56,22 +57,19 @@ const CurrentReservations = () => {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 flex flex-col items-center">
+    <div className="min-h-screen bg-gray-50 p-6 flex flex-col items-center text-theme-brown">
       {/* Navigation Buttons */}
       <div className="w-full max-w-6xl mb-6 flex space-x-4">
-        <button className="py-2 px-5 bg-gray-300 text-gray-800 text-base font-semibold rounded hover:bg-gray-400 transition duration-200">
-          Add Reservation
-        </button>
-        <button className="py-2 px-5 bg-theme-pink text-white text-base font-semibold rounded">
+        <Link to="/customer/reservations" className="py-2 px-5 bg-theme-pink text-white text-base font-semibold rounded">
           Current Reservations
-        </button>
-        <button className="py-2 px-5 bg-gray-300 text-gray-800 text-base font-semibold rounded hover:bg-gray-400 transition duration-200">
+        </Link>
+        <Link to="/customer/reservations/past" className="py-2 px-5 bg-gray-300 text-gray-800 text-base font-semibold rounded hover:bg-gray-400 transition duration-200">
           Past Reservations
-        </button>
+        </Link>
       </div>
 
       {/* Heading and Controls */}
-      <div className="w-full max-w-6xl mb-8">
+      <div className="w-full max-w-6xl mb-4">
         <h2 className="text-xl font-bold text-theme-pink mb-4 mt-6">Your Current Reservations</h2>
         <div className="flex justify-between items-center">
           {/* Filter Dropdown */}

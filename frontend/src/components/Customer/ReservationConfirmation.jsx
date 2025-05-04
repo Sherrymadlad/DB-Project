@@ -1,35 +1,40 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 const ReservationConfirmation = () => {
   const restaurantName = "The Spice Route";
-  const [selectedTime, setSelectedTime] = useState("");
+  const [selectedDateTime, setSelectedDateTime] = useState(null);
   const [specialRequest, setSpecialRequest] = useState("");
 
   const handleNext = () => {
-    // You can add navigation or other logic here later
-    console.log("Reservation data:", { selectedTime, specialRequest });
+    if (!selectedDateTime) {
+      alert("Please select a date and time.");
+      return;
+    }
+
+    console.log("Reservation data:", {
+      dateTime: selectedDateTime.toString(),
+      specialRequest,
+    });
   };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
       <h1 className="text-3xl font-bold text-theme-pink mb-6">{restaurantName}</h1>
 
-      {/* Time Selection */}
+      {/* Date & Time Picker */}
       <div className="w-full max-w-md mb-4">
-        <h2 className="text-xl font-semibold text-gray-800 mb-2">Choose a Time</h2>
-        <select
-          className="w-full p-3 bg-white border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-theme-pink"
-          value={selectedTime}
-          onChange={(e) => setSelectedTime(e.target.value)}
-        >
-          <option value="" disabled>Select a time</option>
-          <option value="12:00 PM">12:00 PM</option>
-          <option value="1:00 PM">1:00 PM</option>
-          <option value="2:00 PM">2:00 PM</option>
-          <option value="6:00 PM">6:00 PM</option>
-          <option value="7:00 PM">7:00 PM</option>
-          <option value="8:00 PM">8:00 PM</option>
-        </select>
+        <h2 className="text-xl font-semibold text-gray-800 mb-2">Choose Date & Time</h2>
+        <DatePicker
+          selected={selectedDateTime}
+          onChange={(date) => setSelectedDateTime(date)}
+          showTimeSelect
+          dateFormat="MMMM d, yyyy h:mm aa"
+          placeholderText="Select date and time"
+          className="w-full min-w-[450px] p-3 bg-white border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-theme-pink"
+        />
       </div>
 
       {/* Special Request Text Box */}
@@ -45,12 +50,13 @@ const ReservationConfirmation = () => {
       </div>
 
       {/* Next Button */}
-      <button
-        className="w-full max-w-xs py-2 bg-theme-pink text-white font-semibold rounded hover:bg-pink-600 transition duration-200"
+      <Link
+        to="/customer/reservations/payment"
+        className="w-full max-w-xs py-2 bg-theme-pink text-white flex items-center justify-center font-semibold rounded hover:bg-pink-600 transition duration-200"
         onClick={handleNext}
       >
         Next
-      </button>
+      </Link>
     </div>
   );
 };
