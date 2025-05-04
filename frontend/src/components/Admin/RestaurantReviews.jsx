@@ -33,18 +33,6 @@ const RestaurantReviews = () => {
   const [sortOrder, setSortOrder] = useState("desc");
   const averageRating = 3.7;
 
-  const handleStarClick = (index) => {
-    setSelectedStars(index + 1);
-  };
-
-  const handleSubmit = () => {
-    if (reviewText && selectedStars > 0) {
-      setReviews([{ name: "You", stars: selectedStars, comment: reviewText }, ...reviews]);
-      setReviewText("");
-      setSelectedStars(0);
-    }
-  };
-
   const sortedReviews = [...reviews].sort((a, b) =>
     sortOrder === "asc" ? a.stars - b.stars : b.stars - a.stars
   );
@@ -55,21 +43,27 @@ const RestaurantReviews = () => {
       <div className="flex gap-4">
         <Link
           className="bg-white border px-4 py-2 rounded hover:bg-gray-100"
-          to="/customer/restaurants/details"
+          to="/admin/restaurants/details"
         >
           Details
         </Link>
         <Link
-          className="bg-white border px-4 py-2 rounded hover:bg-gray-100"
-          to="/customer/restaurants/reserve"
-        >
-          Reserve
-        </Link>
-        <Link
           className="bg-theme-pink text-white px-4 py-2 rounded shadow-md"
-          to="/customer/restaurants/reviews"
+          to="/admin/restaurants/reviews"
         >
           Reviews
+        </Link>
+        <Link
+          className="bg-white border px-4 py-2 rounded hover:bg-gray-100"
+          to="/admin/restaurants/admins"
+        >
+          Admins
+        </Link>
+        <Link
+          className="bg-white border px-4 py-2 rounded hover:bg-gray-100"
+          to="/admin/restaurants/staff"
+        >
+          Staff
         </Link>
       </div>
 
@@ -80,36 +74,6 @@ const RestaurantReviews = () => {
       <div className="text-center mb-6">
         <StarRating rating={averageRating} />
         <p className="text-gray-500 text-sm mt-1">Rated {averageRating} out of 5</p>
-      </div>
-
-      {/* Leave a Review Section */}
-      <div className="bg-white p-4 rounded shadow relative mb-10">
-        <div className="flex justify-center mb-4">
-          {[...Array(5)].map((_, i) => (
-            <StarIcon
-              key={i}
-              className={`h-5 w-5 cursor-pointer mx-1 ${
-                i < selectedStars ? "text-yellow-500" : "text-gray-300"
-              }`}
-              onClick={() => handleStarClick(i)}
-            />
-          ))}
-        </div>
-        <textarea
-          className="w-full border rounded p-2 text-sm resize-none max-h-32 overflow-auto"
-          rows="3"
-          placeholder="Leave a review!"
-          value={reviewText}
-          onChange={(e) => setReviewText(e.target.value)}
-        />
-        <div className="flex justify-center mt-4">
-          <button
-            className="bg-theme-pink text-white px-4 py-2 rounded hover:bg-pink-600"
-            onClick={handleSubmit}
-          >
-            Submit
-          </button>
-        </div>
       </div>
 
       {/* Reviews Section */}
