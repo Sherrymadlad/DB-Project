@@ -274,7 +274,7 @@ const NewRestaurant = () => {
                 placeholder="Search area e.g. Gulberg"
                 className="w-full border rounded-md p-2 shadow"
               />
-              <button type="button" onClick={handleSearch} className="bg-theme-pink text-white px-4 py-2 rounded-md shadow hover:bg-blue-700">
+              <button type="button" onClick={handleSearch} className="bg-theme-pink text-white px-4 py-2 rounded-md shadow hover:bg-pink-600">
                 Search
               </button>
             </div>

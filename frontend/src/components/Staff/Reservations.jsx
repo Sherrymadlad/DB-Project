@@ -60,7 +60,7 @@ const Reservations = () => {
   });
 
   return (
-    <div classname="h-screen">
+    <div className="h-screen">
       <div className="text-4xl text-theme-pink p-7 font-bold border-b">
         Reservations
       </div>
@@ -82,7 +82,7 @@ const Reservations = () => {
           <div className="flex justify-between items-center">
             {/* Filter Dropdown */}
             <div className="flex flex-col gap-1">
-                <div className="text-gray-500 text-sm">Filter By:</div>
+                <div className="text-gray-500 text-sm">Filter By</div>
                 <select
                 value={filterOption}
                 onChange={handleFilterChange}
@@ -98,7 +98,7 @@ const Reservations = () => {
 
             {/* Sort Dropdown */}
             <div className="flex flex-col gap-1">
-                <div className="text-gray-500 text-sm">Sort By:</div>
+                <div className="text-gray-500 text-sm">Sort By</div>
                 <select
                 value={sortOption}
                 onChange={handleSortChange}
@@ -116,6 +116,7 @@ const Reservations = () => {
           <div className="space-y-6">
             {sortedReservations.map((reservation) => (
               <div
+              onClick={() => toggleExpand(reservation.id)}
               key={reservation.id}
               className="bg-white border border-gray-300 rounded-lg shadow-md p-6"
             >
@@ -162,7 +163,6 @@ const Reservations = () => {
                   </p>
 
                   <button
-                    onClick={() => toggleExpand(reservation.id)}
                     className={`transition-transform duration-300 text-gray-600 hover:text-gray-800 justify-self-end ${
                       expandedId === reservation.id ? "rotate-180" : "rotate-0"
                     }`}
