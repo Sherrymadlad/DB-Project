@@ -18,13 +18,15 @@ import AdminLayout from "./components/Admin/AdminLayout";
 import AdminRestaurants from "./components/Admin/Restaurants";
 import AdminRestaurantDetails from "./components/Admin/RestaurantDetails";
 import AdminRestaurantReviews from "./components/Admin/RestaurantReviews";
+import AdminRestaurantAdmins from "./components/Admin/RestaurantAdmins"; 
+import AdminRestaurantStaff from "./components/Admin/RestaurantStaff"; 
 import AdminNewRestaurant from "./components/Admin/NewRestaurant";
 import AdminProfile from "./components/Admin/Profile";
-import RestaurantAdmins from "./components/Admin/RestaurantAdmins"; // Import the new component
-import RestaurantStaff from "./components/Admin/RestaurantStaff"; // <-- Add this line
+import RestaurantAdmins from "./components/Admin/RestaurantAdmins";
+import RestaurantStaff from "./components/Admin/RestaurantStaff";
 import StaffLayout from "./components/Staff/StaffLayout";
 import StaffTables from "./components/Staff/Tables";
-import StaffTableDetails from "./components/Staff/TableDetails"; // Import the new TableDetails component
+import StaffTableDetails from "./components/Staff/TableDetails";
 
 function App() {
   return (
@@ -52,10 +54,10 @@ function App() {
           <Route path="restaurants" element={<AdminRestaurants />} />
           <Route path="restaurants/details" element={<AdminRestaurantDetails />} />
           <Route path="restaurants/reviews" element={<AdminRestaurantReviews />} />
+          <Route path="restaurants/admins" element={<AdminRestaurantAdmins />} />
+          <Route path="restaurants/staff" element={<AdminRestaurantStaff />} />
           <Route path="new/restaurant" element={<AdminNewRestaurant />} />
           <Route path="profile" element={<AdminProfile />} />
-          <Route path="restaurant-admins" element={<RestaurantAdmins />} /> {/* New Route */}
-          <Route path="restaurant-staff" element={<RestaurantStaff />} /> 
         </Route>
 
         <Route path="/staff" element={<StaffLayout />}>
