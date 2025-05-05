@@ -22,11 +22,11 @@ import AdminRestaurantAdmins from "./components/Admin/RestaurantAdmins";
 import AdminRestaurantStaff from "./components/Admin/RestaurantStaff"; 
 import AdminNewRestaurant from "./components/Admin/NewRestaurant";
 import AdminProfile from "./components/Admin/Profile";
-import RestaurantAdmins from "./components/Admin/RestaurantAdmins";
-import RestaurantStaff from "./components/Admin/RestaurantStaff";
 import StaffLayout from "./components/Staff/StaffLayout";
+import StaffReservations from "./components/Staff/Reservations";
+import StaffUpcomingReservations from "./components/Staff/UpcomingReservations";
 import StaffTables from "./components/Staff/Tables";
-import StaffTableDetails from "./components/Staff/TableDetails";
+import StaffProfile from "./components/Staff/Profile";
 
 function App() {
   return (
@@ -61,10 +61,12 @@ function App() {
         </Route>
 
         <Route path="/staff" element={<StaffLayout />}>
+          <Route path="reservations" element={<StaffReservations />} />
+          <Route path="reservations/upcoming" element={<StaffUpcomingReservations />} />
           <Route path="tables" element={<StaffTables />} />
-          <Route path="tables/details" element={<StaffTableDetails />} /> {/* New Route for TableDetails */}
+          <Route path="profile" element={<StaffProfile />} />
         </Route>
-  
+
       </Routes>
     </Router>
   );

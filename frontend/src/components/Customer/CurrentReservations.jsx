@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 
-const CurrentReservations = () => {
+const Reservations = () => {
   const [reservations, setReservations] = useState([
     {
       id: 1,
@@ -10,6 +10,7 @@ const CurrentReservations = () => {
       time: "7:00 PM",
       people: 4,
       status: "Approved",
+      user: "Ali Khan",
     },
     {
       id: 2,
@@ -18,6 +19,7 @@ const CurrentReservations = () => {
       time: "1:30 PM",
       people: 2,
       status: "Pending",
+      user: "Sara Ahmed",
     },
     {
       id: 3,
@@ -26,8 +28,9 @@ const CurrentReservations = () => {
       time: "8:00 PM",
       people: 3,
       status: "Approved",
+      user: "Usman Raza",
     },
-  ]);
+  ]);  
 
   const [expandedId, setExpandedId] = useState(null);
   const [filterOption, setFilterOption] = useState("all");
@@ -78,25 +81,31 @@ const CurrentReservations = () => {
           <h2 className="text-xl font-bold text-theme-pink mb-4">Your Current Reservations</h2>
           <div className="flex justify-between items-center">
             {/* Filter Dropdown */}
-            <select
-              value={filterOption}
-              onChange={handleFilterChange}
-              className="py-2 px-4 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-theme-pink"
-            >
-              <option value="all">Filter by: All</option>
-              <option value="approved">Approved</option>
-              <option value="pending">Pending</option>
-            </select>
+            <div className="flex flex-col gap-1">
+                <div className="text-gray-500 text-sm">Filter By</div>
+                <select
+                value={filterOption}
+                onChange={handleFilterChange}
+                className="py-2 px-4 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-theme-pink"
+                >
+                <option value="all">All</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                </select>
+            </div>
 
             {/* Sort Dropdown */}
-            <select
-              value={sortOption}
-              onChange={handleSortChange}
-              className="py-2 px-4 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-theme-pink"
-            >
-              <option value="time-asc">Sort by: Time Ascending</option>
-              <option value="time-desc">Sort by: Time Descending</option>
-            </select>
+            <div className="flex flex-col gap-1">
+                <div className="text-gray-500 text-sm">Sort By</div>
+                <select
+                value={sortOption}
+                onChange={handleSortChange}
+                className="py-2 px-4 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-theme-pink"
+                >
+                <option value="time-asc">Time Ascending</option>
+                <option value="time-desc">Time Descending</option>
+                </select>
+            </div>
           </div>
         </div>
 
@@ -105,52 +114,79 @@ const CurrentReservations = () => {
           <div className="space-y-6">
             {sortedReservations.map((reservation) => (
               <div
-                key={reservation.id}
-                className="bg-white border border-gray-300 rounded-lg shadow-md p-6"
-              >
-                <div className="flex justify-between items-center">
-                  {/* Reservation Details */}
-                  <div className="flex-1 flex justify-between items-center space-x-8">
-                    <h3 className="text-lg font-bold text-gray-800 flex-shrink-0 w-1/4">
-                      {reservation.restaurant}
-                    </h3>
-                    <p className="text-sm text-gray-600 flex-grow">
-                      {reservation.date} at {reservation.time}
-                    </p>
-                    <p className="text-sm text-gray-600 w-1/4">
-                      Party: {reservation.people}
-                    </p>
-                    <p
-                      className={`text-sm font-semibold flex-shrink-0 w-1/5 ${
-                        reservation.status === "Approved"
-                          ? "text-green-600"
-                          : "text-yellow-600"
-                      }`}
-                    >
-                      {reservation.status}
-                    </p>
-                  </div>
-                  {/* Expand Button */}
-                  <button
-                    onClick={() => toggleExpand(reservation.id)}
-                    className="text-gray-600 hover:text-gray-800"
+              onClick={() => toggleExpand(reservation.id)}
+              key={reservation.id}
+              className="bg-white border border-gray-300 rounded-lg shadow-md p-6"
+            >
+              <div className="grid grid-cols-6 gap-4 items-center">
+                {/* Restaurant Name */}
+                <h3 className="text-lg font-bold text-gray-800 col-span-1 flex items-center justify-center">
+                  {reservation.restaurant}
+                </h3>
+
+                {/* User Name */}
+                <p className="text-sm text-gray-600 col-span-1 flex items-center justify-center">
+                  {reservation.user}
+                </p>
+
+                {/* Date and Time */}
+                <p className="text-sm text-gray-600 col-span-1 flex items-center justify-center">
+                  {reservation.date}
+                </p>
+
+                <p className="text-sm text-gray-600 col-span-1 flex items-center justify-center">
+                  {reservation.time}
+                </p>
+
+
+                {/* Party Size */}
+                <p className="text-sm text-gray-600 col-span-1 flex items-center justify-center">
+                  Party: {reservation.people}
+                </p>
+
+                {/* Status + Expand Button */}
+                <div className="col-span-1 grid grid-cols-2 items-center gap-1">
+                  <p
+                    className={`text-sm font-semibold text-center ${
+                      reservation.status === "Approved"
+                        ? "text-green-600"
+                        : reservation.status === "Completed"
+                        ? "text-theme-pink"
+                        : reservation.status === "Cancelled"
+                        ? "text-red-600"
+                        : "text-yellow-600"
+                    }`}
                   >
-                    {expandedId === reservation.id ? "▲" : "▼"}
+                    {reservation.status}
+                  </p>
+
+                  <button
+                    className={`transition-transform duration-300 text-gray-600 hover:text-gray-800 justify-self-end ${
+                      expandedId === reservation.id ? "rotate-180" : "rotate-0"
+                    }`}
+                  >
+                    ▼
                   </button>
                 </div>
-
-                {/* Expandable Panel */}
-                {expandedId === reservation.id && (
-                  <div className="mt-4 space-y-2">
-                    <button className="w-full py-3 px-4 bg-blue-500 text-white text-sm font-semibold rounded hover:bg-blue-600 transition duration-200">
-                      Modify Reservation
-                    </button>
-                    <button className="w-full py-3 px-4 bg-red-500 text-white text-sm font-semibold rounded hover:bg-red-600 transition duration-200">
-                      Delete Reservation
-                    </button>
-                  </div>
-                )}
               </div>
+            
+              {/* Expandable Panel */}
+              <div
+                className={`transition-all duration-500 overflow-hidden ${
+                  expandedId === reservation.id ? "max-h-40 opacity-100 mt-4" : "max-h-0 opacity-0"
+                }`}
+              >
+                <div className="flex flex-row items-center justify-end gap-4">
+                  <button className="w-1/6 py-3 px-4 bg-theme-pink text-white text-sm font-semibold rounded hover:bg-pink-600 transition duration-200">
+                    Modify
+                  </button>
+                  <button className="w-1/6 py-3 px-4 bg-red-500 text-white text-sm font-semibold rounded hover:bg-red-600 transition duration-200">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+            
             ))}
           </div>
         </div>
@@ -159,4 +195,4 @@ const CurrentReservations = () => {
   );
 };
 
-export default CurrentReservations;
+export default Reservations;

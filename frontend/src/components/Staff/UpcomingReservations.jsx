@@ -92,6 +92,7 @@ const UpcomingReservations = () => {
             ) : (
               filteredReservations.map((reservation) => (
                 <div
+                  onClick={() => toggleExpand(reservation.id)}
                   key={reservation.id}
                   className="bg-white border border-gray-300 rounded-lg shadow-md p-6"
                 >
@@ -116,7 +117,6 @@ const UpcomingReservations = () => {
                         {reservation.status}
                       </p>
                       <button
-                        onClick={() => toggleExpand(reservation.id)}
                         className={`transition-transform duration-300 text-gray-600 hover:text-gray-800 justify-self-end ${
                           expandedId === reservation.id ? "rotate-180" : "rotate-0"
                         }`}

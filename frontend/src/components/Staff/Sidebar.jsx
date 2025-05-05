@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   CalendarDaysIcon,
-  TableCellsIcon,
+  UserGroupIcon,
   UserCircleIcon,
   ArrowRightStartOnRectangleIcon,
 } from '@heroicons/react/24/outline';
@@ -13,7 +13,7 @@ const StaffSidebar = () => {
 
   const tabs = [
     { name: 'Reservations', icon: <CalendarDaysIcon className="h-5 w-5" />, path: '/staff/reservations' },
-    { name: 'Tables', icon: <TableCellsIcon className="h-5 w-5" />, path: '/staff/tables' },
+    { name: 'Tables', icon: <UserGroupIcon className="h-5 w-5" />, path: '/staff/tables' },
     { name: 'Profile', icon: <UserCircleIcon className="h-5 w-5" />, path: '/staff/profile' },
   ];
 
