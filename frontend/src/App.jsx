@@ -22,13 +22,13 @@ import AdminRestaurantAdmins from "./components/Admin/RestaurantAdmins";
 import AdminRestaurantStaff from "./components/Admin/RestaurantStaff"; 
 import AdminNewRestaurant from "./components/Admin/NewRestaurant";
 import AdminProfile from "./components/Admin/Profile";
-
+import Reservations from "./components/Staff/UpcomingReservations";
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Login />} />
+        <Route path="/" element={<Reservations />} />
         <Route path="/signup" element={<Signup />} />
 
         <Route path="/customer" element={<CustomerLayout />}>
