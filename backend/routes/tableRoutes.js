@@ -24,7 +24,8 @@ router.put('/tables/:id/status', tableController.updateTableStatus);
 router.get('/restaurants/:id/tables/available', tableController.getAvailableTables);
 
 // Get tables in a restaurant with at least a minimum capacity
-router.get('/restaurants/:id/tables/by-capacity', tableController.getTablesByCapacity);
+router.get('/restaurants/:id/tables-by-capacity', tableController.getTablesByCapacity);
+router.get('/restaurants/:id/tables-by-capacity-time', tableController.getTablesByCapacityAndTime);
 
 // Reset all tables in a restaurant at closing time
 router.post('/restaurants/:id/tables/reset', tableController.resetTablesAtClosing);

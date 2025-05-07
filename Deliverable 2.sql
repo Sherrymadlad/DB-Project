@@ -1382,14 +1382,15 @@ GO
 --Find table by your desired table size
 CREATE OR ALTER PROCEDURE GetTablesByCapacity
     @RestaurantID INT,
-    @MinCapacity INT
+    @MinCapacity INT = 0
 AS
 BEGIN
     SELECT *
     FROM Tables
     WHERE RestaurantID = @RestaurantID
         AND Capacity >= @MinCapacity
-        AND Status = 'Free';
+        AND Status = 'Free'
+	ORDER BY Capacity ASC;
 END;
 GO
 
@@ -1427,12 +1428,6 @@ BEGIN
 
     DECLARE @EndTime DATETIME = DATEADD(MINUTE, @DurationMinutes, @StartTime);
 
-    -- Check if the table status is Free
-    IF EXISTS (
-        SELECT 1
-    FROM Tables
-    WHERE TableID = @TableID AND Status = 'Free'
-    )
     BEGIN
         -- Check if there are no conflicting reservations
         IF NOT EXISTS (
@@ -1454,17 +1449,13 @@ BEGIN
             SELECT 'Not Available' AS Availability;
         END
     END
-    ELSE
-    BEGIN
-        SELECT 'Not Available' AS Availability;
-    END
 END;
 GO
 
 --Gives all tables which are available at a user's time
 CREATE OR ALTER PROCEDURE GetAvailableTablesByCapacityAndTime
     @RestaurantID INT,
-    @MinCapacity INT,
+    @MinCapacity INT = 0,
     @StartTime DATETIME,
     @DurationMinutes INT
 AS
@@ -1478,7 +1469,6 @@ BEGIN
     WHERE 
         T.RestaurantID = @RestaurantID
         AND T.Capacity >= @MinCapacity
-        AND T.Status = 'Free'
         AND NOT EXISTS (
             SELECT 1
         FROM Reservations R
@@ -1491,7 +1481,6 @@ BEGIN
                   )
         )
     ORDER BY T.Capacity ASC;
--- You can change ordering if needed
 END;
 GO
 
@@ -1499,15 +1488,13 @@ GO
 --Reservations
 
 --Add reservation
-CREATE OR ALTER PROCEDURE AddReservation(
-    @RestaurantID INT,
+CREATE OR ALTER PROCEDURE AddReservation
     @UserID INT,
     @TableID INT,
     @Time DATETIME,
     @Duration INT,
     @People INT,
-    @Request NVARCHAR(MAX)
-)
+    @Request NVARCHAR(MAX) = NULL
 AS
 BEGIN
     -- Check if user exists
@@ -1528,12 +1515,6 @@ BEGIN
         RETURN;
     END
 
-    -- Check if Time is in the future
-    IF @Time <= GETDATE()
-    BEGIN
-        RAISERROR('Reservation time must be in the future.', 16, 1);
-        RETURN;
-    END
 
     -- Check if Duration and People are positive
     IF @Duration <= 0 OR @People <= 0
@@ -1554,26 +1535,9 @@ BEGIN
         RETURN;
     END
 
-    -- Check if the table is already reserved at that time (conflict check)
-    IF EXISTS (
-        SELECT 1
-    FROM Reservations
-    WHERE TableID = @TableID
-        AND Status IN ('Pending', 'Approved')
-        AND (
-            @Time < DATEADD(MINUTE, Duration, Time) AND
-        DATEADD(MINUTE, @Duration, @Time) > Time
-        )
-    )
-    BEGIN
-        RAISERROR('Table is already reserved during the requested time slot.', 16, 1);
-        RETURN;
-    END
-
     -- Insert reservation
-    INSERT INTO Reservations
-    VALUES
-        (@RestaurantID, @UserID, @TableID, @Time, @Duration, @People, @Request, 'Pending');
+    INSERT INTO Reservations (UserID, TableID, Time, Duration, People, Request)
+    VALUES (@UserID, @TableID, @Time, @Duration, @People, @Request);
 END;
 GO
 

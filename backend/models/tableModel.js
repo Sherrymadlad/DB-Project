@@ -105,13 +105,29 @@ const TableModel = {
   },
 
   //Retrieve tables by their capacity
-  getTablesByCapacity: async (restaurantId, minCapacity) => {
+  getTablesByCapacity: async (restaurantId, minCapacity = null) => {
     try {
       const pool = await poolPromise;
       const result = await pool.request()
         .input('RestaurantID', sql.Int, restaurantId)
         .input('MinCapacity', sql.Int, minCapacity)
         .execute('GetTablesByCapacity');
+      return result.recordset;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  },
+
+  //Retrieve tables by their capacity and time
+  getTablesByCapacityAndTime: async (restaurantId, minCapacity = null, startTime, duration) => {
+    try {
+      const pool = await poolPromise;
+      const result = await pool.request()
+        .input('RestaurantID', sql.Int, restaurantId)
+        .input('MinCapacity', sql.Int, minCapacity)
+        .input('StartTime', sql.DateTime, startTime)
+        .input('DurationMinutes', sql.Int, duration)
+        .execute('GetTablesByCapacityAndTime');
       return result.recordset;
     } catch (error) {
       throw new Error(error.message);

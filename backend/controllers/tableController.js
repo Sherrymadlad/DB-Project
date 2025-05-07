@@ -71,8 +71,18 @@ exports.getAvailableTables = async (req, res) => {
 
 exports.getTablesByCapacity = async (req, res) => {
   try {
-    const { minCapacity } = req.body;
+    const { minCapacity } = req.query;
     const result = await TableModel.getTablesByCapacity(req.params.id, parseInt(minCapacity));
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.getTablesByCapacityAndTime = async (req, res) => {
+  try {
+    const { minCapacity, startTime, durationMinutes } = req.query;
+    const result = await TableModel.getTablesByCapacity(req.params.id, minCapacity, startTime, durationMinutes);
     res.status(200).json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });

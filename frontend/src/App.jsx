@@ -39,11 +39,11 @@ function App() {
           <Route path="restaurants" element={<CustomerRestaurants />} />
           <Route path="restaurants/details" element={<CustomerRestaurantDetails />} />
           <Route path="restaurants/reserve" element={<CustomerRestaurantReserve />} />
+          <Route path="restaurants/reservations/confirmation" element={<CustomerReservationConfirmation />} />
+          <Route path="restaurants/reservations/payment" element={<CustomerReservationPayment />} />
           <Route path="restaurants/reviews" element={<CustomerRestaurantReviews />} />
           <Route path="reservations" element={<CustomerCurrentReservations />} />
           <Route path="reservations/past" element={<CustomerPastReservations />} />
-          <Route path="reservations/confirmation" element={<CustomerReservationConfirmation />} />
-          <Route path="reservations/payment" element={<CustomerReservationPayment />} />
           <Route path="reviews" element={<CustomerAddReviews />} />
           <Route path="reviews/past" element={<CustomerPastReviews />} />
           <Route path="payments" element={<CustomerPayments />} />
