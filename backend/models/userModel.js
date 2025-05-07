@@ -35,27 +35,39 @@ const UserModel = {
 
   //Register user
   createUser: async (name, username, password, email, phoneNum, role, profilePic = null) => {
+    let userId;
     try {
-      const pool = await poolPromise;
-      const request = pool.request();
-  
-      // Setting up inputs for the stored procedure
-      request.input('Name', sql.NVarChar, name)
-        .input('Username', sql.NVarChar, username)
-        .input('Password', sql.NVarChar, password)
-        .input('Email', sql.NVarChar, email)
-        .input('PhoneNum', sql.NVarChar, phoneNum)
-        .input('Role', sql.NVarChar, role)
-        .input('ProfilePic', sql.VarBinary, profilePic);
-  
-      // Execute the stored procedure
-      await request.execute('RegisterUser');
-  
-      return { message: 'User created successfully' };
+        const pool = await poolPromise;
+        const request = pool.request();
+
+        // Setting up inputs for the stored procedure
+        request.input('Name', sql.NVarChar, name)
+            .input('Username', sql.NVarChar, username)
+            .input('Password', sql.NVarChar, password)
+            .input('Email', sql.NVarChar, email)
+            .input('PhoneNum', sql.NVarChar, phoneNum)
+            .input('Role', sql.NVarChar, role);
+
+        if (profilePic) {
+            request.input('ProfilePic', sql.VarBinary, profilePic);
+        } else {
+            request.input('ProfilePic', sql.VarBinary, null);
+        }
+
+        // Define output parameter for UserId
+        request.output('UserId', sql.Int);
+
+        // Execute the stored procedure
+        const result = await request.execute('RegisterUser');
+
+        // Capture the UserId from the output parameter
+        userId = result.output.UserId;
+
+        return { message: 'User created successfully', userId: userId };
     } catch (error) {
-      throw new Error(error.message);
+        throw new Error(error.message);
     }
-  },  
+  }, 
 
   //Delete User
   deleteUser: async (userId) => {

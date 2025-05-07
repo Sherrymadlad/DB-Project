@@ -1,61 +1,96 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
+import axios from "axios";
+import defaultRestaurantImage from "../../assets/default-restaurant.png";
 
 const Restaurants = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [favorites, setFavorites] = useState([
-    { name: "Sushi World", cuisine: "Japanese", rating: 4.8 },
-    { name: "The Spice Route", cuisine: "Indian", rating: 4.5 },
-  ]);
-  const [restaurants] = useState([
-    { name: "Cafe Mocha", cuisine: "Continental", rating: 4.2 },
-    { name: "Pasta Palace", cuisine: "Italian", rating: 4.0 },
-    { name: "Burger Hub", cuisine: "American", rating: 3.9 },
-    { name: "Taco Town", cuisine: "Mexican", rating: 4.3 },
-    { name: "Tokyo Bites", cuisine: "Japanese", rating: 4.7 },
-    { name: "Curry House", cuisine: "Indian", rating: 4.4 },
-    { name: "Noodle Nirvana", cuisine: "Chinese", rating: 4.6 },
-    { name: "Greek Taverna", cuisine: "Mediterranean", rating: 4.3 },
-    { name: "Pizza Planet", cuisine: "Italian", rating: 4.1 },
-  ]);
+  const [restaurants, setRestaurants] = useState([]);
+  const [restsPrefs, setRestsPrefs] = useState([]);
+  const [cuisinePrefs, setCuisinePrefs] = useState([]);
+  const [location, setLocation] = useState("");
+  const [sortBy, setSortBy] = useState("Name");
+  const [loading, setLoading] = useState(true); // Manage loading state
+  const [error, setError] = useState(""); // Manage error state
+  const userId = localStorage.getItem("userId");
+  
+  useEffect(() => {
+    if (userId) {
+      const fetchData = async () => {
+        setLoading(true); // Set loading to true before fetching data
+        setError("");
+        try {
 
-  const cuisines = ["Japanese", "Indian"];
+          const fetchPreferences = async (filterBy = null) => {
+            return await axios.get("http://localhost:5000/api/restaurants-search", {
+              params: {userId, filterBy, location, sortBy}
+            });
+          };
+
+          // Fetch restaurants
+          const restaurantsResponse = await fetchPreferences();
+
+          // Fetch both cuisines and restaurant preferences
+          const cuisinePreferencesResponse = await fetchPreferences("PreferredCuisines");
+          const restaurantPreferencesResponse = await fetchPreferences("PreferredRestaurants");
+
+          // Set the state with fetched data
+          setRestaurants(restaurantsResponse.data.data);
+          setCuisinePrefs(cuisinePreferencesResponse.data.data);
+          setRestsPrefs(restaurantPreferencesResponse.data.data);
+
+          setLoading(false); // Set loading to false after data is fetched
+        } catch (err) {
+          setError("An error occurred while fetching data.");
+          setLoading(false); // Set loading to false on error
+        }
+      };
+
+      fetchData();
+    }
+  }, [userId, location, sortBy]);
 
   const handleSearchChange = (e) => setSearchQuery(e.target.value);
 
-  const filteredByCuisine = restaurants.filter((r) => cuisines.includes(r.cuisine));
-  const remainingRestaurants = restaurants.filter(
-    (r) =>
-      !favorites.find((f) => f.name === r.name) &&
-      !filteredByCuisine.find((f) => f.name === r.name)
+  const filteredRestaurants = restaurants.filter((r) =>
+    r.Name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const allRestaurants = [...favorites, ...filteredByCuisine, ...remainingRestaurants];
-
-  const filteredRestaurants = allRestaurants.filter((r) =>
-    r.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const RestaurantCard = ({ restaurant }) => (
-    <Link
-      to="/customer/restaurants/details"
-      className="p-4 bg-white border border-gray-300 rounded-xl shadow-lg hover:shadow-xl transition duration-300 flex items-center"
-    >
-      <div className="w-32 h-32 bg-gray-200 rounded-full flex items-center justify-center mr-6">
-        <span className="text-sm text-gray-500">Image</span>
-      </div>
-      <div className="flex-grow">
-        <h3 className="text-lg font-bold text-gray-800">{restaurant.name}</h3>
-        <div className="mt-2 flex items-center space-x-2">
-          <span className="text-yellow-500 text-lg">⭐</span>
-          <span className="text-md font-semibold text-gray-800">
-            {restaurant.rating.toFixed(1)}
-          </span>
+  const RestaurantCard = ({ restaurant }) => {
+    const handleCardClick = () => {
+      localStorage.setItem("restaurantId", restaurant.RestaurantID);
+    };
+  
+    const imageUrl = restaurant.ProfilePic || defaultRestaurantImage;
+  
+    return (
+      <Link
+        to="/customer/restaurants/details"
+        onClick={handleCardClick}
+        className="p-4 bg-white border border-gray-300 rounded-xl shadow-lg hover:shadow-xl transition duration-300 flex items-center"
+      >
+        <div className="w-32 h-32 bg-gray-200 rounded-full flex items-center justify-center mr-6 overflow-hidden">
+          <img
+            src={imageUrl}
+            alt={restaurant.Name}
+            className={`object-cover ${
+              imageUrl === defaultRestaurantImage ? "w-[90%] h-[90%]" : "w-full h-full"
+            }`}
+          />
         </div>
-      </div>
-    </Link>
-  );
+        <div className="flex-grow">
+          <h3 className="text-lg font-bold text-gray-800">{restaurant.Name}</h3>
+          <div className="mt-2 flex items-center space-x-2">
+            <span className="text-yellow-500 text-lg">⭐</span>
+            <span className="text-md font-semibold text-gray-800">
+              {restaurant.AverageRating.toFixed(1)}
+            </span>
+          </div>
+        </div>
+      </Link>
+    );
+  };  
 
   return (
     <div className="h-screen flex flex-col">
@@ -63,6 +98,7 @@ const Restaurants = () => {
       <div className="text-4xl text-theme-pink p-7 font-bold border-b">
         Restaurants
       </div>
+
       {/* Content */}
       <div className="w-full h-full mx-auto p-8 bg-white text-theme-brown space-y-10 overflow-y-auto">
         {/* Search Bar */}
@@ -79,6 +115,10 @@ const Restaurants = () => {
           </div>
         </div>
 
+        {/* Loading/Error States */}
+        {loading && <div>Loading...</div>}
+        {error && <div className="text-red-500">{error}</div>}
+
         {/* Main Sections */}
         {searchQuery ? (
           <div className="max-w-6xl mx-auto">
@@ -92,26 +132,26 @@ const Restaurants = () => {
           </div>
         ) : (
           <>
-            {favorites.length > 0 && (
+            {restsPrefs.length > 0 && (
               <div className="max-w-6xl mx-auto">
                 <h2 className="text-2xl font-bold text-theme-pink mb-4">Your Faves</h2>
                 <div className="border-b-2 border-pink-500 mb-8"></div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
-                  {favorites.map((restaurant, index) => (
+                  {restsPrefs.map((restaurant, index) => (
                     <RestaurantCard key={index} restaurant={restaurant} />
                   ))}
                 </div>
               </div>
             )}
 
-            {filteredByCuisine.length > 0 && (
+            {cuisinePrefs.length > 0 && (
               <div className="max-w-6xl mx-auto">
                 <h2 className="text-2xl font-bold text-theme-pink mb-4">
                   Restaurants That Offer Your Cuisines
                 </h2>
                 <div className="border-b-2 border-pink-500 mb-8"></div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
-                  {filteredByCuisine.map((restaurant, index) => (
+                  {cuisinePrefs.map((restaurant, index) => (
                     <RestaurantCard key={index} restaurant={restaurant} />
                   ))}
                 </div>
@@ -122,23 +162,42 @@ const Restaurants = () => {
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-2xl font-bold text-pink-500">All Restaurants</h2>
                 <div className="flex space-x-4">
-                  <select className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-theme-pink focus:border-theme-pink">
-                    <option>Sort by</option>
-                    <option>Highest Rated</option>
-                    <option>Lowest Rated</option>
-                  </select>
-                  <select className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-theme-pink focus:border-theme-pink">
-                    <option>All</option>
-                    <option>Nearest to You</option>
-                  </select>
+                  <div className="w-full flex flex-col gap-1">
+                    <div className="text-sm text-gray-500">Sort By</div>
+                    <select
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-theme-pink focus:border-theme-pink"
+                      onChange={(e) => setSortBy(e.target.value)} // Update the sortBy state
+                    >
+                      <option value="Name">Name</option>
+                      <option value="Rating">Rating</option>
+                    </select>
+                  </div>
+                  <div className="w-full flex flex-col gap-1">
+                    <div className="text-sm text-gray-500">Location</div>
+                    <select
+                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-theme-pink focus:border-theme-pink"
+                      onChange={(e) => setLocation(e.target.value)} // Update the location state
+                    >
+                      <option value="">All</option> {/* Empty value to signify all locations */}
+                      <option value="Lahore">Lahore</option>
+                      <option value="Islamabad">Islamabad</option>
+                      <option value="Karachi">Karachi</option>
+                      <option value="Peshawar">Peshawar</option>
+                      <option value="Quetta">Quetta</option>
+                    </select>
+                  </div>
                 </div>
               </div>
               <div className="border-b-2 border-pink-500 mb-8"></div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
-                {remainingRestaurants.map((restaurant, index) => (
+              {restaurants.length>0 ? (<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
+                {restaurants.map((restaurant, index) => (
                   <RestaurantCard key={index} restaurant={restaurant} />
                 ))}
+              </div>) : (
+              <div className="text-center text-gray-500 text-lg mt-10">
+                No restaurants available.
               </div>
+            )}
             </div>
           </>
         )}

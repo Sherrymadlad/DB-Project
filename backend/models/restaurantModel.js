@@ -92,12 +92,11 @@ const RestaurantModel = {
   },
 
   // Search for restaurants based on various filters
-  searchRestaurants: async ({ userId, searchTerm, filterBy, location, sortBy = 'Name' }) => {
+  searchRestaurants: async ({ userId, filterBy=null, location=null, sortBy = 'Name' }) => {
     try {
       const pool = await poolPromise;
       const result = await pool.request()
-        .input('UserID', sql.Int, userId)             
-        .input('SearchTerm', sql.NVarChar(100), searchTerm)     
+        .input('UserID', sql.Int, userId)                
         .input('FilterBy', sql.NVarChar(20), filterBy)
         .input('Location', sql.NVarChar(100), location) 
         .input('SortBy', sql.NVarChar(20), sortBy)     
