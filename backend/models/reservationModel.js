@@ -86,27 +86,19 @@ const ReservationModel = {
   },
 
   // View reservations for a user or specific restaurant
-  viewReservations: async (userId = null, restaurantId = null, status = null) => {
+  viewReservationsUser: async (userId, status = null) => {
     try {
       const pool = await poolPromise;
       const request = pool.request();
 
-      // Input for UserID (only if provided)
-      if (userId) {
-        request.input('UserID', sql.Int, userId);
-      }
-
-      // Input for RestaurantID (only if provided)
-      if (restaurantId) {
-        request.input('RestaurantID', sql.Int, restaurantId);
-      }
+      request.input('UserID', sql.Int, userId);
 
       // Input for Status (only if provided)
       if (status) {
-        request.input('Status', sql.NVarChar(10), status);
+        request.input('Statuses', sql.NVarChar(sql.MAX), status);
       }
 
-      const result = await request.execute('ViewReservations');
+      const result = await request.execute('ViewReservationsUser');
       return result.recordset; 
     } catch (error) {
       throw new Error(error.message);
