@@ -12,7 +12,7 @@ router.post('/reservations/approve', reservationController.approveReservation);
 router.post('/reservations/complete', reservationController.completeReservation);
 
 // Reservations for specific User/Restaurant
-router.get('/reservations', reservationController.viewReservations);
+router.get('/reservations-user', reservationController.viewReservationsUser);
 
 // Payments
 router.post('/reservations/payment', reservationController.processPayment);

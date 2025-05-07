@@ -57,13 +57,12 @@ module.exports = {
     }
   },
 
-  viewReservations: async (req, res) => {
-    const { userId, restaurantId, status } = req.query;
+  viewReservationsUser: async (req, res) => {
+    const { userId, status } = req.query;
     try {
-      const data = await ReservationModel.viewReservations(
-        userId ? parseInt(userId) : null,
-        restaurantId ? parseInt(restaurantId) : null,
-        status ? status.toUpperCase() : null
+      const data = await ReservationModel.viewReservationsUser(
+        userId,
+        status ? status : null
       );
       if (!data.length)
         return res.status(404).json({ success: false, message: 'No reservations found' });
