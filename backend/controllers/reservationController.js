@@ -2,10 +2,10 @@ const ReservationModel = require('../models/reservationModel');
 
 module.exports = {
   addReservation: async (req, res) => {
-    const { restaurantId, userId, tableId, time, duration, people, request: specialRequest } = req.body;
+    const { userId, tableId, time, duration, people, request: specialRequest } = req.body;
     try {
       const data = await ReservationModel.addReservation(
-        restaurantId, userId, tableId, new Date(time), duration, people, specialRequest || null
+        userId, tableId, time, duration, people, specialRequest || null
       );
       res.status(201).json({ success: true, message: data.message });
     } catch (error) {
