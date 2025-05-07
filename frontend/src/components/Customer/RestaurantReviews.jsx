@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { StarIcon } from "@heroicons/react/24/solid";
+import axios from "axios";
 
 const StarRating = ({ rating }) => {
   return (
@@ -24,51 +25,97 @@ const StarRating = ({ rating }) => {
 const RestaurantReviews = () => {
   const [selectedStars, setSelectedStars] = useState(0);
   const [reviewText, setReviewText] = useState("");
-  const [reviews, setReviews] = useState([
-    { name: "Ali", stars: 4, comment: "Great food!" },
-    { name: "Sara", stars: 2, comment: "Not impressed." },
-    { name: "Zain", stars: 5, comment: "Absolutely amazing!" },
-    { name: "Fatima", stars: 3, comment: "It was okay." },
-  ]);
-  const [sortOrder, setSortOrder] = useState("desc");
-  const averageRating = 3.7;
+  const [reviews, setReviews] = useState([]);
+  const [sortOrder, setSortOrder] = useState("Descending");
+  const [averageRating, setAverageRating] = useState(0);
+  const restaurantId = localStorage.getItem("restaurantId");
+  const userId = localStorage.getItem("userId");
+
+  const fetchAverageRating = async () => {
+    try {
+      const res = await axios.get(`http://localhost:5000/api/stats/${restaurantId}`);
+      console.log(res);
+      if (res.data.success) {
+        setAverageRating(res.data.data.averageRating || 0);
+      }
+    } catch (err) {
+      console.error("Error fetching average rating:", err);
+    }
+  };
+
+  const fetchUserName = async (userId) => {
+    try {
+      const res = await axios.get(`http://localhost:5000/api/users/${userId}`);
+      return res.data.Name;
+    } catch (err) {
+      return "Anonymous";
+    }
+  };
+
+  const fetchReviews = async () => {
+    try {
+      const res = await axios.get(`http://localhost:5000/api/sort/restaurant/${restaurantId}`, {
+        params: { order: sortOrder },
+      });
+      if (res.data.success) {
+        const rawReviews = res.data.data;
+
+        const enrichedReviews = await Promise.all(
+          rawReviews.map(async (review) => {
+            const userName = await fetchUserName(review.UserID);
+            return { ...review, Name: userName };
+          })
+        );
+
+        setReviews(enrichedReviews);
+      }
+    } catch (err) {
+      console.error("Error fetching reviews:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchAverageRating();
+    fetchReviews();
+  }, [sortOrder]);
 
   const handleStarClick = (index) => {
     setSelectedStars(index + 1);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (reviewText && selectedStars > 0) {
-      setReviews([{ name: "You", stars: selectedStars, comment: reviewText }, ...reviews]);
-      setReviewText("");
-      setSelectedStars(0);
+      try {
+        const res = await axios.post("http://localhost:5000/api/review", {
+          userId,
+          restaurantId,
+          rating: selectedStars,
+          comment: reviewText,
+        });
+
+        if (res.data.success) {
+          setReviewText("");
+          setSelectedStars(0);
+          fetchReviews();
+          fetchAverageRating();
+        }
+      } catch (err) {
+        console.error("Failed to submit review:", err);
+      }
     }
   };
-
-  const sortedReviews = [...reviews].sort((a, b) =>
-    sortOrder === "asc" ? a.stars - b.stars : b.stars - a.stars
-  );
 
   return (
     <div className="min-h-screen w-full text-theme-brown relative p-6">
       {/* Navigation Buttons */}
       <div className="flex gap-4">
-        <Link
-          className="bg-white border px-4 py-2 rounded hover:bg-gray-100"
-          to="/customer/restaurants/details"
-        >
+        <Link className="bg-white border px-4 py-2 rounded hover:bg-gray-100" to="/customer/restaurants/details">
           Details
         </Link>
-        <Link
-          className="bg-white border px-4 py-2 rounded hover:bg-gray-100"
-          to="/customer/restaurants/reserve"
-        >
+        <Link className="bg-white border px-4 py-2 rounded hover:bg-gray-100" to="/customer/restaurants/reserve">
           Reserve
         </Link>
-        <Link
-          className="bg-theme-pink text-white px-4 py-2 rounded shadow-md"
-          to="/customer/restaurants/reviews"
-        >
+        <Link className="bg-theme-pink text-white px-4 py-2 rounded shadow-md" to="/customer/restaurants/reviews">
           Reviews
         </Link>
       </div>
@@ -79,7 +126,7 @@ const RestaurantReviews = () => {
 
       <div className="text-center mb-6">
         <StarRating rating={averageRating} />
-        <p className="text-gray-500 text-sm mt-1">Rated {averageRating} out of 5</p>
+        <p className="text-gray-500 text-sm mt-1">Rated {averageRating.toFixed(1)} out of 5</p>
       </div>
 
       {/* Leave a Review Section */}
@@ -88,9 +135,7 @@ const RestaurantReviews = () => {
           {[...Array(5)].map((_, i) => (
             <StarIcon
               key={i}
-              className={`h-5 w-5 cursor-pointer mx-1 ${
-                i < selectedStars ? "text-yellow-500" : "text-gray-300"
-              }`}
+              className={`h-5 w-5 cursor-pointer mx-1 ${i < selectedStars ? "text-yellow-500" : "text-gray-300"}`}
               onClick={() => handleStarClick(i)}
             />
           ))}
@@ -115,25 +160,33 @@ const RestaurantReviews = () => {
       {/* Reviews Section */}
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold text-theme-pink">What others are saying</h2>
-        <select
-          value={sortOrder}
-          onChange={(e) => setSortOrder(e.target.value)}
-          className="border text-sm rounded px-2 py-1"
-        >
-          <option value="desc">Sort by Highest Stars</option>
-          <option value="asc">Sort by Lowest Stars</option>
-        </select>
+        <div className="flex flex-col px-2 gap-1">
+          <div className="text-sm text-gray-500">Sort By</div>
+          <select
+            value={sortOrder}
+            onChange={(e) => setSortOrder(e.target.value)}
+            className="border text-sm rounded px-2 py-1"
+          >
+            <option value="Descending">Highest Stars</option>
+            <option value="Ascending">Lowest Stars</option>
+          </select>
+        </div>
       </div>
+
       <div className="space-y-4">
-        {sortedReviews.map((review, idx) => (
-          <div key={idx} className="bg-white p-4 rounded shadow">
-            <div className="flex justify-between items-center mb-2">
-              <span className="font-semibold">{review.name}</span>
-              <StarRating rating={review.stars} />
+        {reviews.length === 0 ? (
+          <div className="text-center text-gray-500 italic">No reviews yet. Be the first to write one!</div>
+        ) : (
+          reviews.map((review, idx) => (
+            <div key={idx} className="bg-white p-4 rounded shadow">
+              <div className="flex justify-between items-center mb-2">
+                <span className="font-semibold">{review.Name || "Anonymous"}</span>
+                <StarRating rating={review.Rating} />
+              </div>
+              <p className="text-sm text-gray-700 break-words">{review.Comment}</p>
             </div>
-            <p className="text-sm text-gray-700 break-words">{review.comment}</p>
-          </div>
-        ))}
+          ))
+        )}
       </div>
     </div>
   );
