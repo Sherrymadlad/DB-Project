@@ -1,11 +1,13 @@
 --Users
 
 --Select all Users
-Select * from Users
+Select *
+from Users
 GO
 
 --Select a specific User
-Select * from  Users
+Select *
+from Users
 where UserID=@Userid
 GO
 
@@ -17,35 +19,65 @@ CREATE OR ALTER PROCEDURE RegisterUser
     @Email NVARCHAR(100),
     @PhoneNum NVARCHAR(13),
     @Role NVARCHAR(10),
-    @ProfilePic VARBINARY(MAX) = NULL
+    @ProfilePic VARBINARY(MAX) = NULL,
+	@UserId INT OUTPUT
 AS
 BEGIN
+    DECLARE @FieldErrors NVARCHAR(MAX) = '';
+
     -- Check if the role is valid
-    IF NOT EXISTS (SELECT 1 FROM (VALUES ('Customer'), ('Admin'), ('Staff')) AS ValidRoles(Role) WHERE Role = @Role)
+    IF NOT EXISTS (SELECT 1
+                   FROM (VALUES
+                            ('Customer'),
+                            ('Admin'),
+                            ('Staff')) AS ValidRoles(Role)
+                   WHERE Role = @Role)
     BEGIN
-        RAISERROR('Invalid role specified. Valid roles are: Customer, Admin, Staff.', 16, 1);
+        SET @FieldErrors = @FieldErrors + 'role: Invalid role specified. Valid roles are: Customer, Admin, Staff.' + CHAR(13);
+    END
+
+    -- Check if user already exists with the same username
+    IF EXISTS (SELECT 1 FROM Users WHERE Username = @Username)
+    BEGIN
+        SET @FieldErrors = @FieldErrors + 'username: Username already exists. Please choose a different one.' + CHAR(13);
+    END
+
+    -- Check if user already exists with the same email
+    IF EXISTS (SELECT 1 FROM Users WHERE Email = @Email)
+    BEGIN
+        SET @FieldErrors = @FieldErrors + 'email: Email already exists. Please use a different one.' + CHAR(13);
+    END
+
+    -- Check if user already exists with the same phone number
+    IF EXISTS (SELECT 1 FROM Users WHERE PhoneNum = @PhoneNum)
+    BEGIN
+        SET @FieldErrors = @FieldErrors + 'phoneNum: Phone number already exists. Please use a different one.' + CHAR(13);
+    END
+
+    -- If there are any errors, raise them all at once
+    IF LEN(@FieldErrors) > 0
+    BEGIN
+        RAISERROR(@FieldErrors, 16, 1);
         RETURN;
     END
 
-    -- Check if user already exists with the same username, email, or phone number
-    IF EXISTS (SELECT 1 FROM Users WHERE Username = @Username OR Email = @Email OR PhoneNum = @PhoneNum)
-    BEGIN
-        RAISERROR('User already exists with this username, email, or phone number.', 16, 1);
-        RETURN;
-    END
-
-    -- Insert new user
-    INSERT INTO Users (Name, Username, Password, Email, PhoneNum, Role, ProfilePic) 
-    VALUES (@Name, @Username, @Password, @Email, @PhoneNum, @Role, @ProfilePic);
+    -- Insert new user if no errors
+    INSERT INTO Users
+        (Name, Username, Password, Email, PhoneNum, Role, ProfilePic)
+    VALUES
+        (@Name, @Username, @Password, @Email, @PhoneNum, @Role, @ProfilePic);
+	SET @UserId = SCOPE_IDENTITY();
 END;
 GO
 
 --Delete User
 CREATE OR ALTER PROCEDURE DeleteUser
-	@UserID INT
+    @UserID INT
 AS
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM Users WHERE UserID = @UserID)
+    IF NOT EXISTS (SELECT 1
+    FROM Users
+    WHERE UserID = @UserID)
     BEGIN
         RAISERROR ('User not found.', 16, 1);
         RETURN;
@@ -65,28 +97,36 @@ CREATE OR ALTER PROCEDURE UpdateUser
 AS
 BEGIN
     -- Check if the user exists
-    IF NOT EXISTS (SELECT 1 FROM Users WHERE UserID = @UserID)
+    IF NOT EXISTS (SELECT 1
+    FROM Users
+    WHERE UserID = @UserID)
     BEGIN
         RAISERROR ('User not found.', 16, 1);
         RETURN;
     END
 
     -- Check if the new username is unique (excluding the current user)
-    IF @Username IS NOT NULL AND EXISTS (SELECT 1 FROM Users WHERE Username = @Username AND UserID <> @UserID)
+    IF @Username IS NOT NULL AND EXISTS (SELECT 1
+        FROM Users
+        WHERE Username = @Username AND UserID <> @UserID)
     BEGIN
         RAISERROR ('Username already exists.', 16, 1);
         RETURN;
     END
 
     -- Check if the new email is unique (excluding the current user)
-    IF @Email IS NOT NULL AND EXISTS (SELECT 1 FROM Users WHERE Email = @Email AND UserID <> @UserID)
+    IF @Email IS NOT NULL AND EXISTS (SELECT 1
+        FROM Users
+        WHERE Email = @Email AND UserID <> @UserID)
     BEGIN
         RAISERROR ('Email already exists.', 16, 1);
         RETURN;
     END
 
     -- Check if the new phone number is unique (excluding the current user)
-    IF @PhoneNum IS NOT NULL AND EXISTS (SELECT 1 FROM Users WHERE PhoneNum = @PhoneNum AND UserID <> @UserID)
+    IF @PhoneNum IS NOT NULL AND EXISTS (SELECT 1
+        FROM Users
+        WHERE PhoneNum = @PhoneNum AND UserID <> @UserID)
     BEGIN
         RAISERROR ('Phone number already exists.', 16, 1);
         RETURN;
@@ -104,7 +144,9 @@ END;
 GO
 
 --Retrieve by role
-SELECT * FROM Users WHERE Role = @Role;
+SELECT *
+FROM Users
+WHERE Role = @Role;
 GO
 
 --Authenticate User
@@ -113,8 +155,12 @@ CREATE OR ALTER PROCEDURE AuthenticateUser
     @Password NVARCHAR(16)
 AS
 BEGIN
-    IF EXISTS (SELECT 1 FROM Users WHERE Username = @Username AND Password = @Password)
-        SELECT 'Login Successful' AS Message;
+    IF EXISTS (SELECT 1
+    FROM Users
+    WHERE Username = @Username AND Password = @Password)
+        SELECT *
+    from Users
+    where Username = @Username;
     ELSE
         RAISERROR ('Invalid Username or Password.', 16, 1);
 END;
@@ -127,7 +173,9 @@ CREATE OR ALTER PROCEDURE ChangePassword
     @NewPassword NVARCHAR(16)
 AS
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM Users WHERE UserID = @UserID AND Password = @OldPassword)
+    IF NOT EXISTS (SELECT 1
+    FROM Users
+    WHERE UserID = @UserID AND Password = @OldPassword)
     BEGIN
         RAISERROR ('Old password is incorrect or user not found.', 16, 1);
         RETURN;
@@ -154,13 +202,13 @@ CREATE OR ALTER PROCEDURE GetUserReviews
 AS
 BEGIN
     SELECT *
-    FROM Reviews 
+    FROM Reviews
     WHERE UserID = @UserID;
 END;
 GO
 
 --Get My Restaurants (Admin)
-SELECT 
+SELECT
     Restaurants.RestaurantID,
     Restaurants.Name,
     Restaurants.Description,
@@ -172,14 +220,15 @@ SELECT
     Restaurants.ProfilePic,
     RestaurantAdmins.UserID
 FROM Restaurants
-JOIN RestaurantAdmins ON Restaurants.RestaurantID = RestaurantAdmins.RestaurantID
+    JOIN RestaurantAdmins ON Restaurants.RestaurantID = RestaurantAdmins.RestaurantID
 WHERE RestaurantAdmins.UserID = @Userid;
 
 GO
 
 --Get Cuisine Prefs
-SELECT Cuisines.CuisineID, Cuisines.Name, Cuisines.Description, UserPrefCuisines.UserID FROM Cuisines
-JOIN UserPrefCuisines ON Cuisines.CuisineID = UserPrefCuisines.CuisineID
+SELECT Cuisines.CuisineID, Cuisines.Name, Cuisines.Description, UserPrefCuisines.UserID
+FROM Cuisines
+    JOIN UserPrefCuisines ON Cuisines.CuisineID = UserPrefCuisines.CuisineID
 WHERE UserPrefCuisines.UserID = @UserID
 GO
 
@@ -190,29 +239,37 @@ CREATE OR ALTER PROCEDURE AddUserCuisinePreference
 AS
 BEGIN
     -- Check if User exists
-    IF NOT EXISTS (SELECT 1 FROM Users WHERE UserID = @UserID)
+    IF NOT EXISTS (SELECT 1
+    FROM Users
+    WHERE UserID = @UserID)
     BEGIN
         RAISERROR ('User does not exist.', 16, 1);
         RETURN;
     END
 
     -- Check if Cuisine exists
-    IF NOT EXISTS (SELECT 1 FROM Cuisines WHERE CuisineID = @CuisineID)
+    IF NOT EXISTS (SELECT 1
+    FROM Cuisines
+    WHERE CuisineID = @CuisineID)
     BEGIN
         RAISERROR ('Cuisine does not exist.', 16, 1);
         RETURN;
     END
 
     -- Check if the preference already exists
-    IF EXISTS (SELECT 1 FROM UserPrefCuisines WHERE UserID = @UserID AND CuisineID = @CuisineID)
+    IF EXISTS (SELECT 1
+    FROM UserPrefCuisines
+    WHERE UserID = @UserID AND CuisineID = @CuisineID)
     BEGIN
         RAISERROR ('User already has this cuisine preference.', 16, 1);
         RETURN;
     END
 
     -- Insert the new preference
-    INSERT INTO UserPrefCuisines (UserID, CuisineID) 
-    VALUES (@UserID, @CuisineID);
+    INSERT INTO UserPrefCuisines
+        (UserID, CuisineID)
+    VALUES
+        (@UserID, @CuisineID);
 END;
 GO
 
@@ -223,21 +280,27 @@ CREATE OR ALTER PROCEDURE RemoveUserCuisinePreference
 AS
 BEGIN
     -- Check if User exists
-    IF NOT EXISTS (SELECT 1 FROM Users WHERE UserID = @UserID)
+    IF NOT EXISTS (SELECT 1
+    FROM Users
+    WHERE UserID = @UserID)
     BEGIN
         RAISERROR ('User does not exist.', 16, 1);
         RETURN;
     END
 
     -- Check if Cuisine exists
-    IF NOT EXISTS (SELECT 1 FROM Cuisines WHERE CuisineID = @CuisineID)
+    IF NOT EXISTS (SELECT 1
+    FROM Cuisines
+    WHERE CuisineID = @CuisineID)
     BEGIN
         RAISERROR ('Cuisine does not exist.', 16, 1);
         RETURN;
     END
 
     -- Check if the user has this cuisine preference
-    IF NOT EXISTS (SELECT 1 FROM UserPrefCuisines WHERE UserID = @UserID AND CuisineID = @CuisineID)
+    IF NOT EXISTS (SELECT 1
+    FROM UserPrefCuisines
+    WHERE UserID = @UserID AND CuisineID = @CuisineID)
     BEGIN
         RAISERROR ('User does not have this cuisine preference.', 16, 1);
         RETURN;
@@ -250,8 +313,9 @@ END;
 GO
 
 --Get Users Preference of restaurants
-SELECT Restaurants.RestaurantID, Restaurants.Name, Restaurants.Description, Restaurants.Location, Restaurants.PhoneNum, Restaurants.OperatingHoursStart, Restaurants.OperatingHoursEnd, Restaurants.Status, Restaurants.ProfilePic, UserPrefRests.UserID FROM Restaurants
-JOIN UserPrefRests ON Restaurants.RestaurantID = UserPrefRests.RestaurantID
+SELECT Restaurants.RestaurantID, Restaurants.Name, Restaurants.Description, Restaurants.Location, Restaurants.PhoneNum, Restaurants.OperatingHoursStart, Restaurants.OperatingHoursEnd, Restaurants.Status, Restaurants.ProfilePic, UserPrefRests.UserID
+FROM Restaurants
+    JOIN UserPrefRests ON Restaurants.RestaurantID = UserPrefRests.RestaurantID
 WHERE UserPrefRests.UserID = @UserID
 
 --Add user restaurant perference
@@ -261,29 +325,37 @@ CREATE OR ALTER PROCEDURE AddUserRestaurantPreference
 AS
 BEGIN
     -- Check if the user exists
-    IF NOT EXISTS (SELECT 1 FROM Users WHERE UserID = @UserID)
+    IF NOT EXISTS (SELECT 1
+    FROM Users
+    WHERE UserID = @UserID)
     BEGIN
         RAISERROR ('User does not exist.', 16, 1);
         RETURN;
     END
 
     -- Check if the restaurant exists
-    IF NOT EXISTS (SELECT 1 FROM Restaurants WHERE RestaurantID = @RestaurantID)
+    IF NOT EXISTS (SELECT 1
+    FROM Restaurants
+    WHERE RestaurantID = @RestaurantID)
     BEGIN
         RAISERROR ('Restaurant does not exist.', 16, 1);
         RETURN;
     END
 
     -- Check if the preference already exists
-    IF EXISTS (SELECT 1 FROM UserPrefRests WHERE UserID = @UserID AND RestaurantID = @RestaurantID)
+    IF EXISTS (SELECT 1
+    FROM UserPrefRests
+    WHERE UserID = @UserID AND RestaurantID = @RestaurantID)
     BEGIN
         RAISERROR ('User already has this restaurant preference.', 16, 1);
         RETURN;
     END
 
     -- Insert the new preference
-    INSERT INTO UserPrefRests (UserID, RestaurantID) 
-    VALUES (@UserID, @RestaurantID);
+    INSERT INTO UserPrefRests
+        (UserID, RestaurantID)
+    VALUES
+        (@UserID, @RestaurantID);
 END;
 GO
 
@@ -293,21 +365,27 @@ CREATE OR ALTER PROCEDURE RemoveUserRestaurantPreference
     @RestaurantID INT
 AS
 BEGIN
-	-- Check if User exists
-    IF NOT EXISTS (SELECT 1 FROM Users WHERE UserID = @UserID)
+    -- Check if User exists
+    IF NOT EXISTS (SELECT 1
+    FROM Users
+    WHERE UserID = @UserID)
     BEGIN
         RAISERROR ('User does not exist.', 16, 1);
         RETURN;
     END
 
     -- Check if Restaurant exists
-    IF NOT EXISTS (SELECT 1 FROM Restaurants WHERE RestaurantID = @RestaurantID)
+    IF NOT EXISTS (SELECT 1
+    FROM Restaurants
+    WHERE RestaurantID = @RestaurantID)
     BEGIN
         RAISERROR ('Restaurant does not exist.', 16, 1);
         RETURN;
     END
     -- Check if the user has this restaurant preference
-    IF NOT EXISTS (SELECT 1 FROM UserPrefRests WHERE UserID = @UserID AND RestaurantID = @RestaurantID)
+    IF NOT EXISTS (SELECT 1
+    FROM UserPrefRests
+    WHERE UserID = @UserID AND RestaurantID = @RestaurantID)
     BEGIN
         RAISERROR ('User does not have this restaurant preference.', 16, 1);
         RETURN;
@@ -322,11 +400,14 @@ GO
 --Restaurants
 
 --Get all restaurants
-SELECT * FROM Restaurants;
+SELECT *
+FROM Restaurants;
 GO
 
 --Get a specific restaurant
-SELECT * FROM Restaurants WHERE RestaurantID = @RestaurantID;
+SELECT *
+FROM Restaurants
+WHERE RestaurantID = @RestaurantID;
 GO
 
 --Register new restaurant 
@@ -344,7 +425,9 @@ BEGIN
     SET NOCOUNT ON;
 
     -- Check if the user is an Admin
-    IF NOT EXISTS (SELECT 1 FROM Users WHERE UserID = @UserID AND Role = 'Admin')
+    IF NOT EXISTS (SELECT 1
+    FROM Users
+    WHERE UserID = @UserID AND Role = 'Admin')
     BEGIN
         RAISERROR ('Only admins can register a new restaurant.', 16, 1);
         RETURN;
@@ -384,7 +467,8 @@ BEGIN
     END
 
     -- Insert the new restaurant
-    INSERT INTO Restaurants (
+    INSERT INTO Restaurants
+        (
         Name,
         Description,
         Location,
@@ -392,23 +476,26 @@ BEGIN
         OperatingHoursStart,
         OperatingHoursEnd,
         ProfilePic
-    )
-    VALUES (
-        @Name,
-        @Description,
-        @Location,
-        @PhoneNum,
-        @OperatingHoursStart,
-        @OperatingHoursEnd,
-        @ProfilePic
+        )
+    VALUES
+        (
+            @Name,
+            @Description,
+            @Location,
+            @PhoneNum,
+            @OperatingHoursStart,
+            @OperatingHoursEnd,
+            @ProfilePic
     );
 
     -- Get the new RestaurantID
     DECLARE @RestaurantID INT = SCOPE_IDENTITY();
 
     -- Assign the registering admin as the restaurant admin
-    INSERT INTO RestaurantAdmins (RestaurantID, UserID)
-    VALUES (@RestaurantID, @UserID);
+    INSERT INTO RestaurantAdmins
+        (RestaurantID, UserID)
+    VALUES
+        (@RestaurantID, @UserID);
 
     -- Optional: Return the new RestaurantID to the caller
     SELECT @RestaurantID AS NewRestaurantID;
@@ -430,14 +517,18 @@ CREATE OR ALTER PROCEDURE UpdateRestaurant
 AS
 BEGIN
     -- Check if restaurant exists
-    IF NOT EXISTS (SELECT 1 FROM Restaurants WHERE RestaurantID = @RestaurantID)
+    IF NOT EXISTS (SELECT 1
+    FROM Restaurants
+    WHERE RestaurantID = @RestaurantID)
     BEGIN
         RAISERROR ('Restaurant not found.', 16, 1);
         RETURN;
     END
 
     -- Check if user is Admin
-    IF EXISTS (SELECT 1 FROM RestaurantAdmins WHERE UserID = @UserID AND RestaurantID = @RestaurantID)
+    IF EXISTS (SELECT 1
+    FROM RestaurantAdmins
+    WHERE UserID = @UserID AND RestaurantID = @RestaurantID)
     BEGIN
         -- VALIDATION (only validate if value is provided)
         IF @PhoneNum IS NOT NULL AND (LEN(@PhoneNum) < 10 OR LEN(@PhoneNum) > 13)
@@ -474,7 +565,9 @@ BEGIN
     END
 
     -- If user is a Staff
-    IF EXISTS (SELECT 1 FROM RestaurantStaff WHERE UserID = @UserID AND RestaurantID = @RestaurantID)
+    IF EXISTS (SELECT 1
+    FROM RestaurantStaff
+    WHERE UserID = @UserID AND RestaurantID = @RestaurantID)
     BEGIN
         -- VALIDATION for staff updates
         IF @OperatingHoursStart IS NOT NULL AND @OperatingHoursEnd IS NOT NULL AND @OperatingHoursStart >= @OperatingHoursEnd
@@ -510,21 +603,27 @@ CREATE OR ALTER PROCEDURE DeleteRestaurant
 AS
 BEGIN
     -- Check if the user exists
-    IF NOT EXISTS (SELECT 1 FROM Users WHERE UserID = @UserID)
+    IF NOT EXISTS (SELECT 1
+    FROM Users
+    WHERE UserID = @UserID)
     BEGIN
         RAISERROR ('User not found.', 16, 1);
         RETURN;
     END
 
     -- Check if the restaurant exists
-    IF NOT EXISTS (SELECT 1 FROM Restaurants WHERE RestaurantID = @RestaurantID)
+    IF NOT EXISTS (SELECT 1
+    FROM Restaurants
+    WHERE RestaurantID = @RestaurantID)
     BEGIN
         RAISERROR ('Restaurant not found.', 16, 1);
         RETURN;
     END
 
     -- Check if the user is an Admin of the specific restaurant
-    IF NOT EXISTS (SELECT 1 FROM RestaurantAdmins WHERE UserID = @UserID AND RestaurantID = @RestaurantID)
+    IF NOT EXISTS (SELECT 1
+    FROM RestaurantAdmins
+    WHERE UserID = @UserID AND RestaurantID = @RestaurantID)
     BEGIN
         RAISERROR ('Only admins of the restaurant can delete it.', 16, 1);
         RETURN;
@@ -538,15 +637,17 @@ GO
 --Retrive Restaurants by optional search, location, cuisine filters, favorite filters, and alphabetical or rating wise sorting
 CREATE OR ALTER PROCEDURE SearchRestaurants
     @UserID INT,
-    @SearchTerm NVARCHAR(100) = NULL,
-    @SortBy NVARCHAR(20) = 'Name',      -- or 'Rating'
-    @FilterBy NVARCHAR(20) = NULL,      -- 'PreferredRestaurants', 'PreferredCuisines', or NULL
-    @Location NVARCHAR(100) = NULL      -- Optional location filter
+    @SortBy NVARCHAR(20) = 'Name',
+    -- or 'Rating'
+    @FilterBy NVARCHAR(20) = NULL,
+    -- 'PreferredRestaurants', 'PreferredCuisines', or NULL
+    @Location NVARCHAR(100) = NULL
+-- Optional location filter
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    SELECT 
+    SELECT
         R.RestaurantID,
         R.Name,
         R.Description,
@@ -558,24 +659,25 @@ BEGIN
         R.ProfilePic,
         ISNULL(AVG(CAST(Rev.Rating AS FLOAT)), 0) AS AverageRating
     FROM Restaurants R
-    LEFT JOIN Reviews Rev ON R.RestaurantID = Rev.RestaurantID
+        LEFT JOIN Reviews Rev ON R.RestaurantID = Rev.RestaurantID
     WHERE 
         R.Status = 'Open' AND
-        (@SearchTerm IS NULL OR R.Name LIKE '%' + @SearchTerm + '%') AND
-        (@Location IS NULL OR R.Location LIKE '%' + @Location + '%') AND
+        (@Location IS NULL OR R.Location COLLATE Latin1_General_CI_AS LIKE '%' + @Location + '%') AND
         (
             @FilterBy IS NULL OR
-            (
+        (
                 @FilterBy = 'PreferredRestaurants' AND EXISTS (
-                    SELECT 1 FROM UserPrefRests UR
-                    WHERE UR.UserID = @UserID AND UR.RestaurantID = R.RestaurantID
+                    SELECT 1
+        FROM UserPrefRests UR
+        WHERE UR.UserID = @UserID AND UR.RestaurantID = R.RestaurantID
                 )
             ) OR
-            (
+        (
                 @FilterBy = 'PreferredCuisines' AND EXISTS (
-                    SELECT 1 FROM RestCuisines RC
-                    JOIN UserPrefCuisines UPC ON RC.CuisineID = UPC.CuisineID
-                    WHERE RC.RestaurantID = R.RestaurantID AND UPC.UserID = @UserID
+                    SELECT 1
+        FROM RestCuisines RC
+            JOIN UserPrefCuisines UPC ON RC.CuisineID = UPC.CuisineID
+        WHERE RC.RestaurantID = R.RestaurantID AND UPC.UserID = @UserID
                 )
             )
         )
@@ -592,13 +694,15 @@ GO
 CREATE OR ALTER PROCEDURE SearchRestaurantsAdmin
     @UserID INT,
     @SearchTerm NVARCHAR(100) = NULL,
-    @SortBy NVARCHAR(20) = 'Name',      -- or 'Rating'     
-    @Location NVARCHAR(100) = NULL      -- Optional location filter
+    @SortBy NVARCHAR(20) = 'Name',
+    -- or 'Rating'     
+    @Location NVARCHAR(100) = NULL
+-- Optional location filter
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    SELECT 
+    SELECT
         R.RestaurantID,
         R.Name,
         R.Description,
@@ -610,11 +714,13 @@ BEGIN
         R.ProfilePic,
         ISNULL(AVG(CAST(Rev.Rating AS FLOAT)), 0) AS AverageRating
     FROM Restaurants R
-    LEFT JOIN Reviews Rev ON R.RestaurantID = Rev.RestaurantID
+        LEFT JOIN Reviews Rev ON R.RestaurantID = Rev.RestaurantID
     WHERE 
         (@SearchTerm IS NULL OR R.Name LIKE '%' + @SearchTerm + '%') AND
         (@Location IS NULL OR R.Location LIKE '%'+ @Location + '%') AND
-		(@UserID IN (Select UserID from RestaurantAdmins where UserID=@UserID))
+        (@UserID IN (Select UserID
+        from RestaurantAdmins
+        where UserID=@UserID))
     GROUP BY 
         R.RestaurantID, R.Name, R.Description, R.Location, R.PhoneNum,
         R.OperatingHoursStart, R.OperatingHoursEnd, R.Status, R.ProfilePic
@@ -627,53 +733,69 @@ GO
 --Assign admin to a restaurant
 CREATE OR ALTER PROCEDURE AssignRestaurantAdmin
     @RestaurantID INT,
-    @UserID INT,          -- The user requesting the action
-    @TargetUserID INT     -- The user being assigned as admin
+    @UserID INT,
+    -- The user requesting the action
+    @TargetUserID INT
+-- The user being assigned as admin
 AS
 BEGIN
     -- Check if the requester (@UserID) is an Admin of the restaurant
-    IF NOT EXISTS (SELECT 1 FROM RestaurantAdmins WHERE RestaurantID = @RestaurantID AND UserID = @UserID)
+    IF NOT EXISTS (SELECT 1
+    FROM RestaurantAdmins
+    WHERE RestaurantID = @RestaurantID AND UserID = @UserID)
     BEGIN
         RAISERROR ('Only an admin of this specific restaurant can assign another admin.', 16, 1);
         RETURN;
     END
 
     -- Check if the targeted user (@TargetUserID) is already an admin of the restaurant
-    IF EXISTS (SELECT 1 FROM RestaurantAdmins WHERE RestaurantID = @RestaurantID AND UserID = @TargetUserID)
+    IF EXISTS (SELECT 1
+    FROM RestaurantAdmins
+    WHERE RestaurantID = @RestaurantID AND UserID = @TargetUserID)
     BEGIN
         RAISERROR ('Target user is already an admin of this restaurant.', 16, 1);
         RETURN;
     END
 
     -- Check if the targeted user exists and is an admin
-    IF NOT EXISTS (SELECT 1 FROM Users WHERE UserID = @TargetUserID AND Role = 'Admin')
+    IF NOT EXISTS (SELECT 1
+    FROM Users
+    WHERE UserID = @TargetUserID AND Role = 'Admin')
     BEGIN
         RAISERROR ('Target user must be an Admin to be assigned as a restaurant admin.', 16, 1);
         RETURN;
     END
 
     -- Assign the target user as admin for the restaurant
-    INSERT INTO RestaurantAdmins (RestaurantID, UserID)
-    VALUES (@RestaurantID, @TargetUserID);
+    INSERT INTO RestaurantAdmins
+        (RestaurantID, UserID)
+    VALUES
+        (@RestaurantID, @TargetUserID);
 END;
 GO
 
 --Remove admin from restaurant
 CREATE OR ALTER PROCEDURE RemoveRestaurantAdmin
-    @UserID INT,          -- The user making the request
-    @TargetUserID INT,    -- The admin being removed
+    @UserID INT,
+    -- The user making the request
+    @TargetUserID INT,
+    -- The admin being removed
     @RestaurantID INT
 AS
 BEGIN
     -- Check if the requester (@UserID) is an Admin of the restaurant
-    IF NOT EXISTS (SELECT 1 FROM RestaurantAdmins WHERE RestaurantID = @RestaurantID AND UserID = @UserID)
+    IF NOT EXISTS (SELECT 1
+    FROM RestaurantAdmins
+    WHERE RestaurantID = @RestaurantID AND UserID = @UserID)
     BEGIN
         RAISERROR ('Only an admin of this specific restaurant can remove another admin.', 16, 1);
         RETURN;
     END
 
     -- Check if the target user (@TargetUserID) is an admin of the restaurant
-    IF NOT EXISTS (SELECT 1 FROM RestaurantAdmins WHERE RestaurantID = @RestaurantID AND UserID = @TargetUserID)
+    IF NOT EXISTS (SELECT 1
+    FROM RestaurantAdmins
+    WHERE RestaurantID = @RestaurantID AND UserID = @TargetUserID)
     BEGIN
         RAISERROR ('Target user is not an admin of this restaurant.', 16, 1);
         RETURN;
@@ -686,9 +808,9 @@ END;
 GO
 
 --All admins for a specfic restaurant
-SELECT U.UserID, U.Name, U.Email, U.PhoneNum  
-FROM Users U  
-JOIN RestaurantAdmins RA ON U.UserID = RA.UserID  
+SELECT U.UserID, U.Name, U.Email, U.PhoneNum
+FROM Users U
+    JOIN RestaurantAdmins RA ON U.UserID = RA.UserID
 WHERE RA.RestaurantID = @Restaurantid;  
 GO
 
@@ -706,53 +828,69 @@ GO
 -- Assign staff to a restaurant
 CREATE OR ALTER PROCEDURE AssignRestaurantStaff
     @RestaurantID INT,
-    @UserID INT,          -- The user requesting the action
-    @TargetUserID INT     -- The user being assigned as staff
+    @UserID INT,
+    -- The user requesting the action
+    @TargetUserID INT
+-- The user being assigned as staff
 AS
 BEGIN
     -- Check if the requester (@UserID) is an Admin of the restaurant
-    IF NOT EXISTS (SELECT 1 FROM RestaurantAdmins WHERE RestaurantID = @RestaurantID AND UserID = @UserID)
+    IF NOT EXISTS (SELECT 1
+    FROM RestaurantAdmins
+    WHERE RestaurantID = @RestaurantID AND UserID = @UserID)
     BEGIN
         RAISERROR ('Only an admin of this specific restaurant can assign staff.', 16, 1);
         RETURN;
     END
 
-	-- Check if the targeted user exists and is a staff
-    IF NOT EXISTS (SELECT 1 FROM Users WHERE UserID = @TargetUserID AND Role = 'Staff')
+    -- Check if the targeted user exists and is a staff
+    IF NOT EXISTS (SELECT 1
+    FROM Users
+    WHERE UserID = @TargetUserID AND Role = 'Staff')
     BEGIN
         RAISERROR ('Target user must be a staff member to be assigned as a restaurant staff member.', 16, 1);
         RETURN;
     END
 
     -- Check if the targeted user (@TargetUserID) is already a staff of the restaurant
-    IF EXISTS (SELECT 1 FROM RestaurantStaff WHERE RestaurantID = @RestaurantID AND UserID = @TargetUserID)
+    IF EXISTS (SELECT 1
+    FROM RestaurantStaff
+    WHERE RestaurantID = @RestaurantID AND UserID = @TargetUserID)
     BEGIN
         RAISERROR ('Target user is already a staff member of this restaurant.', 16, 1);
         RETURN;
     END
 
     -- Assign the target user as staff for the restaurant
-    INSERT INTO RestaurantStaff (RestaurantID, UserID)
-    VALUES (@RestaurantID, @TargetUserID);
+    INSERT INTO RestaurantStaff
+        (RestaurantID, UserID)
+    VALUES
+        (@RestaurantID, @TargetUserID);
 END;
 GO
 
 -- Remove staff from restaurant
 CREATE OR ALTER PROCEDURE RemoveRestaurantStaff
-    @UserID INT,          -- The user making the request
-    @TargetUserID INT,    -- The staff being removed
+    @UserID INT,
+    -- The user making the request
+    @TargetUserID INT,
+    -- The staff being removed
     @RestaurantID INT
 AS
 BEGIN
     -- Check if the requester (@UserID) is an Admin of the restaurant
-    IF NOT EXISTS (SELECT 1 FROM RestaurantAdmins WHERE RestaurantID = @RestaurantID AND UserID = @UserID)
+    IF NOT EXISTS (SELECT 1
+    FROM RestaurantAdmins
+    WHERE RestaurantID = @RestaurantID AND UserID = @UserID)
     BEGIN
         RAISERROR ('Only an admin of this specific restaurant can remove staff.', 16, 1);
         RETURN;
     END
 
     -- Check if the target user (@TargetUserID) is a staff of the restaurant
-    IF NOT EXISTS (SELECT 1 FROM RestaurantStaff WHERE RestaurantID = @RestaurantID AND UserID = @TargetUserID)
+    IF NOT EXISTS (SELECT 1
+    FROM RestaurantStaff
+    WHERE RestaurantID = @RestaurantID AND UserID = @TargetUserID)
     BEGIN
         RAISERROR ('Target user is not a staff member of this restaurant.', 16, 1);
         RETURN;
@@ -765,9 +903,9 @@ END;
 GO
 
 -- All staff for a specific restaurant
-SELECT U.UserID, U.Name, U.Email, U.PhoneNum  
-FROM Users U  
-JOIN RestaurantStaff RS ON U.UserID = RS.UserID  
+SELECT U.UserID, U.Name, U.Email, U.PhoneNum
+FROM Users U
+    JOIN RestaurantStaff RS ON U.UserID = RS.UserID
 WHERE RS.RestaurantID = @RestaurantID;
 GO
 
@@ -786,19 +924,24 @@ GO
 CREATE OR ALTER PROCEDURE AddRestaurantImage
     @RestaurantID INT,
     @Image VARBINARY(MAX),
-    @UserID INT  -- The user requesting the action
+    @UserID INT
+-- The user requesting the action
 AS
 BEGIN
     -- Check if the user is an admin of the restaurant
-    IF NOT EXISTS (SELECT 1 FROM RestaurantAdmins WHERE RestaurantID = @RestaurantID AND UserID = @UserID)
+    IF NOT EXISTS (SELECT 1
+    FROM RestaurantAdmins
+    WHERE RestaurantID = @RestaurantID AND UserID = @UserID)
     BEGIN
         RAISERROR('Only an admin of this restaurant can add images.', 16, 1);
         RETURN;
     END
 
     -- Add the image to the restaurant
-    INSERT INTO RestImages (RestaurantID, Image)
-    VALUES (@RestaurantID, @Image);
+    INSERT INTO RestImages
+        (RestaurantID, Image)
+    VALUES
+        (@RestaurantID, @Image);
 END;
 GO
 
@@ -806,11 +949,14 @@ GO
 CREATE OR ALTER PROCEDURE DeleteRestaurantImage
     @ImageID INT,
     @RestaurantID INT,
-    @UserID INT  -- The user requesting the action
+    @UserID INT
+-- The user requesting the action
 AS
 BEGIN
     -- Check if the user is an admin of the restaurant
-    IF NOT EXISTS (SELECT 1 FROM RestaurantAdmins WHERE RestaurantID = @RestaurantID AND UserID = @UserID)
+    IF NOT EXISTS (SELECT 1
+    FROM RestaurantAdmins
+    WHERE RestaurantID = @RestaurantID AND UserID = @UserID)
     BEGIN
         RAISERROR('Only an admin of this restaurant can delete images.', 16, 1);
         RETURN;
@@ -823,8 +969,21 @@ END;
 GO
 
 --View Rest Images
-Select Image from RestImages
-where RestaurantID=@RestaurantID;
+CREATE OR ALTER PROCEDURE GetRestaurantImages
+    @RestaurantID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT 
+        ImageID,
+        RestaurantID,
+        Image
+    FROM 
+        RestImages
+    WHERE 
+        RestaurantID = @RestaurantID;
+END;
 GO
 
 --Add Cuisine to Restaurant
@@ -834,29 +993,37 @@ CREATE OR ALTER PROCEDURE AddCuisineToRestaurant
 AS
 BEGIN
     -- Check if the restaurant exists
-    IF NOT EXISTS (SELECT 1 FROM Restaurants WHERE RestaurantID = @RestaurantID)
+    IF NOT EXISTS (SELECT 1
+    FROM Restaurants
+    WHERE RestaurantID = @RestaurantID)
     BEGIN
         RAISERROR ('Restaurant does not exist.', 16, 1);
         RETURN;
     END
 
     -- Check if the cuisine exists
-    IF NOT EXISTS (SELECT 1 FROM Cuisines WHERE CuisineID = @CuisineID)
+    IF NOT EXISTS (SELECT 1
+    FROM Cuisines
+    WHERE CuisineID = @CuisineID)
     BEGIN
         RAISERROR ('Cuisine does not exist.', 16, 1);
         RETURN;
     END
 
     -- Check if the cuisine is already assigned to the restaurant
-    IF EXISTS (SELECT 1 FROM RestCuisines WHERE RestaurantID = @RestaurantID AND CuisineID = @CuisineID)
+    IF EXISTS (SELECT 1
+    FROM RestCuisines
+    WHERE RestaurantID = @RestaurantID AND CuisineID = @CuisineID)
     BEGIN
         RAISERROR ('Cuisine is already assigned to the restaurant.', 16, 1);
         RETURN;
     END
 
     -- Add the cuisine to the restaurant
-    INSERT INTO RestCuisines (CuisineID, RestaurantID)
-    VALUES (@CuisineID, @RestaurantID);
+    INSERT INTO RestCuisines
+        (CuisineID, RestaurantID)
+    VALUES
+        (@CuisineID, @RestaurantID);
 END;
 GO
 
@@ -867,21 +1034,27 @@ CREATE OR ALTER PROCEDURE RemoveCuisineFromRestaurant
 AS
 BEGIN
     -- Check if the restaurant exists
-    IF NOT EXISTS (SELECT 1 FROM Restaurants WHERE RestaurantID = @RestaurantID)
+    IF NOT EXISTS (SELECT 1
+    FROM Restaurants
+    WHERE RestaurantID = @RestaurantID)
     BEGIN
         RAISERROR ('Restaurant does not exist.', 16, 1);
         RETURN;
     END
 
     -- Check if the cuisine exists
-    IF NOT EXISTS (SELECT 1 FROM Cuisines WHERE CuisineID = @CuisineID)
+    IF NOT EXISTS (SELECT 1
+    FROM Cuisines
+    WHERE CuisineID = @CuisineID)
     BEGIN
         RAISERROR ('Cuisine does not exist.', 16, 1);
         RETURN;
     END
 
     -- Check if the cuisine is currently assigned to the restaurant
-    IF NOT EXISTS (SELECT 1 FROM RestCuisines WHERE RestaurantID = @RestaurantID AND CuisineID = @CuisineID)
+    IF NOT EXISTS (SELECT 1
+    FROM RestCuisines
+    WHERE RestaurantID = @RestaurantID AND CuisineID = @CuisineID)
     BEGIN
         RAISERROR ('Cuisine is not currently assigned to the restaurant.', 16, 1);
         RETURN;
@@ -899,19 +1072,21 @@ CREATE OR ALTER PROCEDURE GetCuisinesForRestaurant
 AS
 BEGIN
     -- Check if the restaurant exists
-    IF NOT EXISTS (SELECT 1 FROM Restaurants WHERE RestaurantID = @RestaurantID)
+    IF NOT EXISTS (SELECT 1
+    FROM Restaurants
+    WHERE RestaurantID = @RestaurantID)
     BEGIN
         RAISERROR ('Restaurant does not exist.', 16, 1);
         RETURN;
     END
 
     -- Select all cuisines associated with the restaurant
-    SELECT 
+    SELECT
         c.CuisineID,
         c.Name AS CuisineName,
         c.Description
     FROM RestCuisines rc
-    INNER JOIN Cuisines c ON rc.CuisineID = c.CuisineID
+        INNER JOIN Cuisines c ON rc.CuisineID = c.CuisineID
     WHERE rc.RestaurantID = @RestaurantID;
 END;
 GO
@@ -919,7 +1094,8 @@ GO
 --Open/Close Restaurant
 CREATE OR ALTER PROCEDURE SetRestaurantStatus
     @RestaurantID INT,
-    @Status NVARCHAR(10)  -- 'Open' or 'Closed'
+    @Status NVARCHAR(10)
+-- 'Open' or 'Closed'
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -932,7 +1108,9 @@ BEGIN
     END
 
     -- Check if restaurant exists
-    IF NOT EXISTS (SELECT 1 FROM Restaurants WHERE RestaurantID = @RestaurantID)
+    IF NOT EXISTS (SELECT 1
+    FROM Restaurants
+    WHERE RestaurantID = @RestaurantID)
     BEGIN
         RAISERROR('Restaurant with the given ID does not exist.', 16, 1);
         RETURN;
@@ -949,15 +1127,17 @@ GO
 CREATE OR ALTER PROCEDURE GetAllTablesByStaff
     @UserID INT,
     @RestaurantID INT,
-    @Status NVARCHAR(10) = NULL  -- Optional status filter
+    @Status NVARCHAR(10) = NULL
+-- Optional status filter
 AS
 BEGIN
     SET NOCOUNT ON;
 
     -- Verify the user is a staff member of the restaurant
     IF NOT EXISTS (
-        SELECT 1 FROM RestaurantStaff
-        WHERE UserID = @UserID AND RestaurantID = @RestaurantID
+        SELECT 1
+    FROM RestaurantStaff
+    WHERE UserID = @UserID AND RestaurantID = @RestaurantID
     )
     BEGIN
         RAISERROR('Only staff of this restaurant can view tables.', 16, 1);
@@ -965,9 +1145,10 @@ BEGIN
     END
 
     -- Return tables with optional status filtering
-    SELECT * FROM Tables
+    SELECT *
+    FROM Tables
     WHERE RestaurantID = @RestaurantID
-    AND (@Status IS NULL OR Status = @Status);
+        AND (@Status IS NULL OR Status = @Status);
 END;
 GO
 
@@ -975,7 +1156,9 @@ GO
 --Tables
 
 --Get all tables in a restaurant
-SELECT * FROM Tables WHERE RestaurantID = @Restaurantid
+SELECT *
+FROM Tables
+WHERE RestaurantID = @Restaurantid
 GO
 
 --Check table availability
@@ -983,21 +1166,24 @@ CREATE OR ALTER PROCEDURE CheckTableAvailability
     @TableID INT
 AS
 BEGIN
-    SELECT Status FROM Tables WHERE TableID = @TableID;
+    SELECT Status
+    FROM Tables
+    WHERE TableID = @TableID;
 END;
 GO
 
 --Insert a table for a restaurant
 CREATE OR ALTER PROCEDURE AddTable
-    @UserID INT,           -- The user making the request
+    @UserID INT,
+    -- The user making the request
     @Capacity INT,
     @Description NVARCHAR(MAX),
     @RestaurantID INT
 AS
 BEGIN
     SET NOCOUNT ON;
-	
-	--Validate input
+
+    --Validate input
     IF @Capacity IS NULL OR @Capacity <= 0
     BEGIN
         RAISERROR('Invalid Capacity. Must be greater than zero.', 16, 1);
@@ -1012,8 +1198,9 @@ BEGIN
 
     -- Ensure the user is an admin of the restaurant
     IF NOT EXISTS (
-        SELECT 1 FROM RestaurantAdmins 
-        WHERE UserID = @UserID AND RestaurantID = @RestaurantID
+        SELECT 1
+    FROM RestaurantAdmins
+    WHERE UserID = @UserID AND RestaurantID = @RestaurantID
     )
     BEGIN
         RAISERROR('Only admins can add tables.', 16, 1);
@@ -1021,14 +1208,17 @@ BEGIN
     END
 
     -- Insert the new table
-    INSERT INTO Tables (Capacity, Description, RestaurantID)
-    VALUES (@Capacity, @Description, @RestaurantID);
+    INSERT INTO Tables
+        (Capacity, Description, RestaurantID)
+    VALUES
+        (@Capacity, @Description, @RestaurantID);
 END;
 GO
 
 --Update table information
 CREATE OR ALTER PROCEDURE UpdateTable
-    @UserID INT,         -- The user making the request
+    @UserID INT,
+    -- The user making the request
     @TableID INT,
     @Capacity INT = NULL,
     @Status NVARCHAR(10) = NULL,
@@ -1061,7 +1251,9 @@ BEGIN
     END
 
     -- Get the RestaurantID for the given TableID
-    SELECT @RestaurantID = RestaurantID FROM Tables WHERE TableID = @TableID;
+    SELECT @RestaurantID = RestaurantID
+    FROM Tables
+    WHERE TableID = @TableID;
 
     -- If no table found, return an error
     IF @RestaurantID IS NULL
@@ -1072,8 +1264,9 @@ BEGIN
 
     -- Check if the requester (@UserID) is an Admin of the restaurant
     IF NOT EXISTS (
-        SELECT 1 FROM RestaurantAdmins 
-        WHERE UserID = @UserID AND RestaurantID = @RestaurantID
+        SELECT 1
+    FROM RestaurantAdmins
+    WHERE UserID = @UserID AND RestaurantID = @RestaurantID
     )
     BEGIN
         RAISERROR ('Only admins can update tables.', 16, 1);
@@ -1092,14 +1285,17 @@ GO
 
 --Delete table 
 CREATE OR ALTER PROCEDURE DeleteTable
-    @UserID INT,         -- The user making the request
+    @UserID INT,
+    -- The user making the request
     @TableID INT
 AS
 BEGIN
     DECLARE @RestaurantID INT;
-    
+
     -- Get the RestaurantID for the given TableID
-    SELECT @RestaurantID = RestaurantID FROM Tables WHERE TableID = @TableID;
+    SELECT @RestaurantID = RestaurantID
+    FROM Tables
+    WHERE TableID = @TableID;
 
     -- If no table found, return an error
     IF @RestaurantID IS NULL
@@ -1110,8 +1306,9 @@ BEGIN
 
     -- Check if the requester (@UserID) is an Admin of the restaurant
     IF NOT EXISTS (
-        SELECT 1 FROM RestaurantAdmins 
-        WHERE UserID = @UserID AND RestaurantID = @RestaurantID
+        SELECT 1
+    FROM RestaurantAdmins
+    WHERE UserID = @UserID AND RestaurantID = @RestaurantID
     )
     BEGIN
         RAISERROR ('Only admins can delete tables.', 16, 1);
@@ -1125,13 +1322,19 @@ GO
 
 --Change table availability (manual by staff)
 CREATE OR ALTER PROCEDURE UpdateTableStatus
-    @UserID INT,           -- The staff member making the request
+    @UserID INT,
+    -- The staff member making the request
     @TableID INT,
-    @NewStatus NVARCHAR(10) -- The new status to set
+    @NewStatus NVARCHAR(10)
+-- The new status to set
 AS
 BEGIN
     -- Check if the user is a staff member of the restaurant
-    IF NOT EXISTS (SELECT 1 FROM RestaurantStaff WHERE UserID = @UserID AND RestaurantID IN (SELECT RestaurantID FROM Tables WHERE TableID = @TableID))
+    IF NOT EXISTS (SELECT 1
+    FROM RestaurantStaff
+    WHERE UserID = @UserID AND RestaurantID IN (SELECT RestaurantID
+        FROM Tables
+        WHERE TableID = @TableID))
     BEGIN
         RAISERROR ('Only staff members of the restaurant can change the table status.', 16, 1);
         RETURN;
@@ -1148,7 +1351,9 @@ BEGIN
     IF @NewStatus = 'Occupied'
     BEGIN
         -- Check if the table is already reserved or occupied
-        IF EXISTS (SELECT 1 FROM Tables WHERE TableID = @TableID AND Status IN ('Reserved', 'Occupied'))
+        IF EXISTS (SELECT 1
+        FROM Tables
+        WHERE TableID = @TableID AND Status IN ('Reserved', 'Occupied'))
         BEGIN
             RAISERROR ('Cannot occupy this table. It is either reserved or already occupied.', 16, 1);
             RETURN;
@@ -1167,9 +1372,10 @@ CREATE OR ALTER PROCEDURE GetAvailableTables
     @RestaurantID INT
 AS
 BEGIN
-    SELECT * FROM Tables
+    SELECT *
+    FROM Tables
     WHERE RestaurantID = @RestaurantID
-    AND Status = 'Free';
+        AND Status = 'Free';
 END;
 GO
 
@@ -1179,10 +1385,11 @@ CREATE OR ALTER PROCEDURE GetTablesByCapacity
     @MinCapacity INT
 AS
 BEGIN
-    SELECT * FROM Tables
+    SELECT *
+    FROM Tables
     WHERE RestaurantID = @RestaurantID
-    AND Capacity >= @MinCapacity
-    AND Status = 'Free';
+        AND Capacity >= @MinCapacity
+        AND Status = 'Free';
 END;
 GO
 
@@ -1204,7 +1411,7 @@ BEGIN
         UPDATE Tables
         SET Status = 'Free'
         WHERE RestaurantID = @RestaurantID
-        AND Status = 'Occupied';
+            AND Status = 'Occupied';
     END;
 END;
 GO
@@ -1222,21 +1429,21 @@ BEGIN
 
     -- Check if the table status is Free
     IF EXISTS (
-        SELECT 1 
-        FROM Tables
-        WHERE TableID = @TableID AND Status = 'Free'
+        SELECT 1
+    FROM Tables
+    WHERE TableID = @TableID AND Status = 'Free'
     )
     BEGIN
         -- Check if there are no conflicting reservations
         IF NOT EXISTS (
             SELECT 1
-            FROM Reservations
-            WHERE TableID = @TableID
-              AND Status = 'Approved'
-              AND (
+        FROM Reservations
+        WHERE TableID = @TableID
+            AND Status = 'Approved'
+            AND (
                     (Time BETWEEN @StartTime AND @EndTime) OR
-                    (DATEADD(MINUTE, Duration, Time) BETWEEN @StartTime AND @EndTime) OR
-                    (@StartTime BETWEEN Time AND DATEADD(MINUTE, Duration, Time))
+            (DATEADD(MINUTE, Duration, Time) BETWEEN @StartTime AND @EndTime) OR
+            (@StartTime BETWEEN Time AND DATEADD(MINUTE, Duration, Time))
                  )
         )
         BEGIN
@@ -1274,16 +1481,17 @@ BEGIN
         AND T.Status = 'Free'
         AND NOT EXISTS (
             SELECT 1
-            FROM Reservations R
-            WHERE R.TableID = T.TableID
-              AND R.Status = 'Approved'
-              AND (
+        FROM Reservations R
+        WHERE R.TableID = T.TableID
+            AND R.Status = 'Approved'
+            AND (
                     (R.Time BETWEEN @StartTime AND @EndTime) OR
-                    (DATEADD(MINUTE, R.Duration, R.Time) BETWEEN @StartTime AND @EndTime) OR
-                    (@StartTime BETWEEN R.Time AND DATEADD(MINUTE, R.Duration, R.Time))
+            (DATEADD(MINUTE, R.Duration, R.Time) BETWEEN @StartTime AND @EndTime) OR
+            (@StartTime BETWEEN R.Time AND DATEADD(MINUTE, R.Duration, R.Time))
                   )
         )
-    ORDER BY T.Capacity ASC; -- You can change ordering if needed
+    ORDER BY T.Capacity ASC;
+-- You can change ordering if needed
 END;
 GO
 
@@ -1292,7 +1500,7 @@ GO
 
 --Add reservation
 CREATE OR ALTER PROCEDURE AddReservation(
-	@RestaurantID INT,
+    @RestaurantID INT,
     @UserID INT,
     @TableID INT,
     @Time DATETIME,
@@ -1303,14 +1511,18 @@ CREATE OR ALTER PROCEDURE AddReservation(
 AS
 BEGIN
     -- Check if user exists
-    IF NOT EXISTS (SELECT 1 FROM Users WHERE UserID = @UserID)
+    IF NOT EXISTS (SELECT 1
+    FROM Users
+    WHERE UserID = @UserID)
     BEGIN
         RAISERROR('User does not exist.', 16, 1);
         RETURN;
     END
 
     -- Check if table exists
-    IF NOT EXISTS (SELECT 1 FROM Tables WHERE TableID = @TableID)
+    IF NOT EXISTS (SELECT 1
+    FROM Tables
+    WHERE TableID = @TableID)
     BEGIN
         RAISERROR('Table does not exist.', 16, 1);
         RETURN;
@@ -1332,7 +1544,9 @@ BEGIN
 
     -- Check if the number of people exceeds the table's capacity
     DECLARE @TableCapacity INT;
-    SELECT @TableCapacity = Capacity FROM Tables WHERE TableID = @TableID;
+    SELECT @TableCapacity = Capacity
+    FROM Tables
+    WHERE TableID = @TableID;
 
     IF @People > @TableCapacity
     BEGIN
@@ -1342,12 +1556,13 @@ BEGIN
 
     -- Check if the table is already reserved at that time (conflict check)
     IF EXISTS (
-        SELECT 1 FROM Reservations
-        WHERE TableID = @TableID
+        SELECT 1
+    FROM Reservations
+    WHERE TableID = @TableID
         AND Status IN ('Pending', 'Approved')
         AND (
             @Time < DATEADD(MINUTE, Duration, Time) AND
-            DATEADD(MINUTE, @Duration, @Time) > Time
+        DATEADD(MINUTE, @Duration, @Time) > Time
         )
     )
     BEGIN
@@ -1356,15 +1571,17 @@ BEGIN
     END
 
     -- Insert reservation
-    INSERT INTO Reservations 
-    VALUES (@RestaurantID,@UserID, @TableID, @Time, @Duration, @People, @Request, 'Pending');
+    INSERT INTO Reservations
+    VALUES
+        (@RestaurantID, @UserID, @TableID, @Time, @Duration, @People, @Request, 'Pending');
 END;
 GO
 
 --Update reservation details
 CREATE OR ALTER PROCEDURE ModifyReservation
     @ReservationID INT,
-    @UserID INT,            -- User requesting the modification
+    @UserID INT,
+    -- User requesting the modification
     @NewTime DATETIME = NULL,
     @NewDuration INT = NULL,
     @NewPeople INT = NULL,
@@ -1372,15 +1589,17 @@ CREATE OR ALTER PROCEDURE ModifyReservation
 AS
 BEGIN
     DECLARE @RestaurantID INT, @ReservationUserID INT, @ReservationStatus NVARCHAR(10);
-    
+
     -- Get the RestaurantID of the table associated with the reservation and the reservation's current status
-    SELECT @RestaurantID=T.RestaurantID,  @ReservationUserID=R.UserID, @ReservationStatus=R.Status
+    SELECT @RestaurantID=T.RestaurantID, @ReservationUserID=R.UserID, @ReservationStatus=R.Status
     FROM Reservations R
-    JOIN Tables T ON R.TableID = T.TableID
+        JOIN Tables T ON R.TableID = T.TableID
     WHERE R.ReservationID = @ReservationID;
 
     -- Check if the reservation exists
-    IF @ReservationID IS NULL OR NOT EXISTS (SELECT 1 FROM Reservations WHERE ReservationID = @ReservationID)
+    IF @ReservationID IS NULL OR NOT EXISTS (SELECT 1
+        FROM Reservations
+        WHERE ReservationID = @ReservationID)
     BEGIN
         RAISERROR('Reservation does not exist.', 16, 1);
         RETURN;
@@ -1390,7 +1609,9 @@ BEGIN
     IF @UserID != @ReservationUserID
     BEGIN
         -- If the user is not the reservation creator, check if they are a staff member
-        IF NOT EXISTS (SELECT 1 FROM RestaurantStaff RS WHERE RS.RestaurantID = @RestaurantID AND RS.UserID = @UserID)
+        IF NOT EXISTS (SELECT 1
+        FROM RestaurantStaff RS
+        WHERE RS.RestaurantID = @RestaurantID AND RS.UserID = @UserID)
         BEGIN
             RAISERROR ('You do not have permission to modify this reservation.', 16, 1);
             RETURN;
@@ -1415,12 +1636,15 @@ BEGIN
     IF @NewTime IS NOT NULL
     BEGIN
         IF EXISTS (
-            SELECT 1 FROM Reservations
-            WHERE TableID = (SELECT TableID FROM Reservations WHERE ReservationID = @ReservationID)
+            SELECT 1
+        FROM Reservations
+        WHERE TableID = (SELECT TableID
+            FROM Reservations
+            WHERE ReservationID = @ReservationID)
             AND Status IN ('Pending', 'Approved')
             AND (
                 @NewTime < DATEADD(MINUTE, Duration, Time) AND
-                DATEADD(MINUTE, @NewDuration, @NewTime) > Time
+            DATEADD(MINUTE, @NewDuration, @NewTime) > Time
             )
         )
         BEGIN
@@ -1444,32 +1668,36 @@ BEGIN
         Duration = COALESCE(@NewDuration, Duration),
         People = COALESCE(@NewPeople, People),
         Request = COALESCE(@NewRequest, Request)
-    WHERE ReservationID = @ReservationID 
-    AND Status IN ('Pending');  -- Only allow modification if the reservation is in 'Pending' status
+    WHERE ReservationID = @ReservationID
+        AND Status IN ('Pending');
+-- Only allow modification if the reservation is in 'Pending' status
 END;
 GO
 
 --Cancel a Reservation
 CREATE OR ALTER PROCEDURE CancelReservation
     @ReservationID INT,
-    @UserID INT   -- User requesting the cancellation
+    @UserID INT
+-- User requesting the cancellation
 AS
 BEGIN
     DECLARE @RestaurantID INT, @ReservationUserID INT, @TableID INT;
 
     -- Get the RestaurantID of the table associated with the reservation
-    SELECT @RestaurantID = T.RestaurantID, 
-           @ReservationUserID = R.UserID,
-           @TableID = T.TableID
+    SELECT @RestaurantID = T.RestaurantID,
+        @ReservationUserID = R.UserID,
+        @TableID = T.TableID
     FROM Reservations R
-    JOIN Tables T ON R.TableID = T.TableID
+        JOIN Tables T ON R.TableID = T.TableID
     WHERE R.ReservationID = @ReservationID;
 
     -- Check if the user is the one who made the reservation or if they are a staff member
     IF @UserID != @ReservationUserID
     BEGIN
         -- Check if the user is a staff member of the restaurant
-        IF NOT EXISTS (SELECT 1 FROM RestaurantStaff RS WHERE RS.RestaurantID = @RestaurantID AND RS.UserID = @UserID)
+        IF NOT EXISTS (SELECT 1
+        FROM RestaurantStaff RS
+        WHERE RS.RestaurantID = @RestaurantID AND RS.UserID = @UserID)
         BEGIN
             RAISERROR ('You do not have permission to cancel this reservation.', 16, 1);
             RETURN;
@@ -1485,14 +1713,15 @@ BEGIN
     UPDATE Tables
     SET Status = 'Free'
     WHERE TableID = @TableID;
-    
+
 END;
 GO
 
 --Approve a Reservation
 CREATE OR ALTER PROCEDURE ApproveReservation
     @ReservationID INT,
-    @UserID INT          -- User requesting the approval (staff member)
+    @UserID INT
+-- User requesting the approval (staff member)
 AS
 BEGIN
     DECLARE @RestaurantID INT, @TableID INT;
@@ -1500,18 +1729,22 @@ BEGIN
     -- Get the RestaurantID and TableID for the reservation
     SELECT @RestaurantID = T.RestaurantID, @TableID = R.TableID
     FROM Reservations R
-    JOIN Tables T ON R.TableID = T.TableID
+        JOIN Tables T ON R.TableID = T.TableID
     WHERE R.ReservationID = @ReservationID;
 
     -- Check if the user is a staff member of the same restaurant
-    IF NOT EXISTS (SELECT 1 FROM RestaurantStaff RS WHERE RS.RestaurantID = @RestaurantID AND RS.UserID = @UserID)
+    IF NOT EXISTS (SELECT 1
+    FROM RestaurantStaff RS
+    WHERE RS.RestaurantID = @RestaurantID AND RS.UserID = @UserID)
     BEGIN
         RAISERROR ('Only staff members of the restaurant can approve the reservation.', 16, 1);
         RETURN;
     END
 
     -- Ensure the reservation is in "Pending" status before approving
-    IF NOT EXISTS (SELECT 1 FROM Reservations WHERE ReservationID = @ReservationID AND Status = 'Pending')
+    IF NOT EXISTS (SELECT 1
+    FROM Reservations
+    WHERE ReservationID = @ReservationID AND Status = 'Pending')
     BEGIN
         RAISERROR ('The reservation is not in Pending status.', 16, 1);
         RETURN;
@@ -1532,22 +1765,25 @@ GO
 --Complete a reservation
 CREATE OR ALTER PROCEDURE CompleteReservation
     @ReservationID INT,
-    @UserID INT           -- The staff member completing the reservation
+    @UserID INT
+-- The staff member completing the reservation
 AS
 BEGIN
     DECLARE @RestaurantID INT, @ReservationUserID INT, @TableID INT;
-    
+
     -- Get the restaurant ID from the table associated with the reservation
-    SELECT @RestaurantID=T.RestaurantID, @ReservationUserID=R.UserID,@TableID=R.TableID
+    SELECT @RestaurantID=T.RestaurantID, @ReservationUserID=R.UserID, @TableID=R.TableID
     FROM Reservations R
-    JOIN Tables T ON R.TableID = T.TableID
+        JOIN Tables T ON R.TableID = T.TableID
     WHERE R.ReservationID = @ReservationID;
 
     -- Check if the user is the reservation creator or a staff member at the same restaurant
     IF @UserID != @ReservationUserID
     BEGIN
         -- Check if the user is a staff member of the same restaurant
-        IF NOT EXISTS (SELECT 1 FROM RestaurantStaff RS WHERE RS.RestaurantID = @RestaurantID AND RS.UserID = @UserID)
+        IF NOT EXISTS (SELECT 1
+        FROM RestaurantStaff RS
+        WHERE RS.RestaurantID = @RestaurantID AND RS.UserID = @UserID)
         BEGIN
             RAISERROR('You do not have permission to complete this reservation.', 16, 1);
             RETURN;
@@ -1555,14 +1791,16 @@ BEGIN
     END
 
     -- Only update if the reservation status is 'Approved'
-    IF EXISTS (SELECT 1 FROM Reservations WHERE ReservationID = @ReservationID AND Status = 'Approved')
+    IF EXISTS (SELECT 1
+    FROM Reservations
+    WHERE ReservationID = @ReservationID AND Status = 'Approved')
     BEGIN
         UPDATE Reservations
         SET Status = 'Completed'
         WHERE ReservationID = @ReservationID;
 
-		-- Change the table status to 'Occupied'
-		UPDATE Tables
+        -- Change the table status to 'Occupied'
+        UPDATE Tables
 		SET Status = 'Occupied'
 		WHERE TableID = @TableID;
     END
@@ -1576,20 +1814,22 @@ GO
 
 --View reservations by status optionally for users 
 CREATE OR ALTER PROCEDURE ViewReservationsUser
-    @UserID INT,           
-    @Status NVARCHAR(10) = NULL    -- Optional: Filter by status
+    @UserID INT,
+    @Status NVARCHAR(10) = NULL
+-- Optional: Filter by status
 AS
 BEGIN
     -- Retrieve reservations
     SELECT r.ReservationID, r.UserID, r.TableID, r.Time, r.Duration, r.People, r.Request, r.Status,
-           t.Capacity, t.Description AS TableDescription, res.Name AS RestaurantName
+        t.Capacity, t.Description AS TableDescription, res.Name AS RestaurantName
     FROM Reservations r
-    JOIN Tables t ON r.TableID = t.TableID
-    JOIN Restaurants res ON t.RestaurantID = res.RestaurantID
+        JOIN Tables t ON r.TableID = t.TableID
+        JOIN Restaurants res ON t.RestaurantID = res.RestaurantID
     WHERE 
          r.UserID = @UserID AND
         (@Status IS NULL OR r.Status = @Status)
-    ORDER BY r.Time DESC;  -- Order by reservation time
+    ORDER BY r.Time DESC;
+-- Order by reservation time
 END;
 GO
 
@@ -1602,13 +1842,15 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    IF NOT EXISTS (SELECT 1 FROM Restaurants WHERE RestaurantID = @RestaurantID)
+    IF NOT EXISTS (SELECT 1
+    FROM Restaurants
+    WHERE RestaurantID = @RestaurantID)
     BEGIN
         RAISERROR('Restaurant not found.', 16, 1);
         RETURN;
     END
 
-    SELECT 
+    SELECT
         R.ReservationID,
         R.UserID,
         U.Name AS UserName,
@@ -1618,15 +1860,16 @@ BEGIN
         R.People AS NumGuests,
         R.Request AS SpecialRequest
     FROM Reservations R
-    JOIN Users U ON R.UserID = U.UserID
-    JOIN Tables T ON R.TableID = T.TableID
+        JOIN Users U ON R.UserID = U.UserID
+        JOIN Tables T ON R.TableID = T.TableID
     WHERE 
         T.RestaurantID = @RestaurantID
         AND (@SearchTerm IS NULL OR U.Name LIKE '%' + @SearchTerm + '%')
         AND (@Status IS NULL OR R.Status = @Status)
     ORDER BY 
         R.Time DESC
-    OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY; -- optional paging
+    OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY;
+-- optional paging
 END;
 GO
 
@@ -1636,7 +1879,7 @@ CREATE OR ALTER PROCEDURE GetTodayApprovedReservations
     @SearchTerm NVARCHAR(100) = NULL
 AS
 BEGIN
-    SELECT 
+    SELECT
         R.ReservationID,
         R.UserID,
         U.Name AS UserName,
@@ -1644,12 +1887,12 @@ BEGIN
         R.Time AS ReservationTime,
         R.Status
     FROM Reservations R
-    JOIN Users U ON R.UserID = U.UserID
-    JOIN Tables T ON R.TableID = T.TableID
+        JOIN Users U ON R.UserID = U.UserID
+        JOIN Tables T ON R.TableID = T.TableID
     WHERE T.RestaurantID = @RestaurantID
-      AND R.Status = 'Approved'
-      AND CAST(R.Time AS DATE) = CAST(GETDATE() AS DATE)
-      AND (
+        AND R.Status = 'Approved'
+        AND CAST(R.Time AS DATE) = CAST(GETDATE() AS DATE)
+        AND (
           @SearchTerm IS NULL OR U.Name LIKE '%' + @SearchTerm + '%'
       )
     ORDER BY R.Time ASC;
@@ -1663,7 +1906,7 @@ AS
 BEGIN
     SELECT COUNT(*) AS TotalReservations
     FROM Reservations r
-    JOIN Tables t ON r.TableID = t.TableID
+        JOIN Tables t ON r.TableID = t.TableID
     WHERE t.RestaurantID = @RestaurantID;
 END;
 GO
@@ -1676,8 +1919,10 @@ CREATE OR ALTER PROCEDURE ProcessReservationPayment(
 )
 AS
 BEGIN
-    INSERT INTO Payments (ReservationID, Amount, PaymentDate, Status, Method)
-    VALUES (@ReservationID, @Amount, GETDATE(), 'Completed', @Method);
+    INSERT INTO Payments
+        (ReservationID, Amount, PaymentDate, Status, Method)
+    VALUES
+        (@ReservationID, @Amount, GETDATE(), 'Completed', @Method);
 END;
 GO
 
@@ -1705,14 +1950,18 @@ CREATE OR ALTER PROCEDURE InsertReview
 AS
 BEGIN
     -- Validate that the user is a customer
-    IF NOT EXISTS (SELECT 1 FROM Users WHERE UserID = @UserID AND Role = 'Customer')
+    IF NOT EXISTS (SELECT 1
+    FROM Users
+    WHERE UserID = @UserID AND Role = 'Customer')
     BEGIN
         RAISERROR ('Only customers can insert reviews.', 16, 1);
         RETURN;
     END
 
-	-- Validate that the restaurant exists 
-    IF NOT EXISTS (SELECT 1 FROM Restaurants WHERE RestaurantID = @RestaurantID)
+    -- Validate that the restaurant exists 
+    IF NOT EXISTS (SELECT 1
+    FROM Restaurants
+    WHERE RestaurantID = @RestaurantID)
     BEGIN
         RAISERROR ('Restaurant does not exist!', 16, 1);
         RETURN;
@@ -1726,8 +1975,10 @@ BEGIN
     END
 
     -- Insert the new review
-    INSERT INTO Reviews (UserID, RestaurantID, Rating, Comment)
-    VALUES (@UserID, @RestaurantID, @Rating, @Comment);
+    INSERT INTO Reviews
+        (UserID, RestaurantID, Rating, Comment)
+    VALUES
+        (@UserID, @RestaurantID, @Rating, @Comment);
 END;
 GO
 
@@ -1756,14 +2007,18 @@ CREATE OR ALTER PROCEDURE DeleteReview
 AS
 BEGIN
     -- Check if the review exists
-    IF NOT EXISTS (SELECT 1 FROM Reviews WHERE ReviewID = @ReviewID)
+    IF NOT EXISTS (SELECT 1
+    FROM Reviews
+    WHERE ReviewID = @ReviewID)
     BEGIN
         RAISERROR ('Review not found.', 16, 1);
         RETURN;
     END
 
     -- Check if the user is the one who CREATE OR ALTERd the review
-    IF EXISTS (SELECT 1 FROM Reviews WHERE ReviewID = @ReviewID AND UserID = @UserID)
+    IF EXISTS (SELECT 1
+    FROM Reviews
+    WHERE ReviewID = @ReviewID AND UserID = @UserID)
     BEGIN
         -- User is deleting their own review
         DELETE FROM Reviews WHERE ReviewID = @ReviewID AND UserID = @UserID;
@@ -1778,7 +2033,7 @@ GO
 --Retrieve top rated restaurants
 SELECT r.RestaurantID, r.Name, AVG(rev.Rating) AS AverageRating
 FROM Restaurants r
-JOIN Reviews rev ON r.RestaurantID = rev.RestaurantID
+    JOIN Reviews rev ON r.RestaurantID = rev.RestaurantID
 GROUP BY r.RestaurantID, r.Name
 ORDER BY AverageRating DESC;
 GO
@@ -1786,9 +2041,9 @@ GO
 --Top rated restaurants for a specific cuisine
 SELECT r.RestaurantID, r.Name, AVG(rv.Rating) AS AvgRating
 FROM Restaurants r
-JOIN Reviews rv ON r.RestaurantID = rv.RestaurantID
-JOIN RestCuisines rc ON r.RestaurantID = rc.RestaurantID
-JOIN Cuisines c ON rc.CuisineID = c.CuisineID
+    JOIN Reviews rv ON r.RestaurantID = rv.RestaurantID
+    JOIN RestCuisines rc ON r.RestaurantID = rc.RestaurantID
+    JOIN Cuisines c ON rc.CuisineID = c.CuisineID
 WHERE c.Name = @CuisineName
 GROUP BY r.RestaurantID, r.Name
 ORDER BY AvgRating DESC;
@@ -1797,7 +2052,8 @@ GO
 --Sorts reviews of a specific user by ascending or descending
 CREATE OR ALTER PROCEDURE SortUserReviewsByRating
     @UserID INT,
-    @SortOrder NVARCHAR(10) = 'Descending'  -- 'Ascending' or 'Descending'
+    @SortOrder NVARCHAR(10) = 'Descending'
+-- 'Ascending' or 'Descending'
 AS
 BEGIN
     IF @SortOrder NOT IN ('Ascending', 'Descending')
@@ -1806,7 +2062,8 @@ BEGIN
         RETURN;
     END
 
-    SELECT * FROM Reviews
+    SELECT *
+    FROM Reviews
     WHERE UserID = @UserID
     ORDER BY 
         CASE WHEN @SortOrder = 'Ascending' THEN Rating END ASC,
@@ -1817,7 +2074,8 @@ GO
 --Sort reviews of a specific restaurant by ascending or descending
 CREATE OR ALTER PROCEDURE SortRestaurantReviewsByRating
     @RestaurantID INT,
-    @SortOrder NVARCHAR(10) = 'Descending'  -- 'Ascending' or 'Descending'
+    @SortOrder NVARCHAR(10) = 'Descending'
+-- 'Ascending' or 'Descending'
 AS
 BEGIN
     IF @SortOrder NOT IN ('Ascending', 'Descending')
@@ -1826,7 +2084,8 @@ BEGIN
         RETURN;
     END
 
-    SELECT * FROM Reviews
+    SELECT *
+    FROM Reviews
     WHERE RestaurantID = @RestaurantID
     ORDER BY 
         CASE WHEN @SortOrder = 'Ascending' THEN Rating END ASC,
@@ -1859,15 +2118,19 @@ BEGIN
     END
 
     -- Check for existing cuisine name (unique constraint)
-    IF EXISTS (SELECT 1 FROM Cuisines WHERE Name = @Name)
+    IF EXISTS (SELECT 1
+    FROM Cuisines
+    WHERE Name = @Name)
     BEGIN
         RAISERROR('Cuisine name already exists.', 16, 1);
         RETURN;
     END
 
     -- Insert cuisine
-    INSERT INTO Cuisines (Name, Description)
-    VALUES (@Name, @Description);
+    INSERT INTO Cuisines
+        (Name, Description)
+    VALUES
+        (@Name, @Description);
 END;
 GO
 
@@ -1881,7 +2144,9 @@ BEGIN
     SET NOCOUNT ON;
 
     -- Check if cuisine exists
-    IF NOT EXISTS (SELECT 1 FROM Cuisines WHERE CuisineID = @CuisineID)
+    IF NOT EXISTS (SELECT 1
+    FROM Cuisines
+    WHERE CuisineID = @CuisineID)
     BEGIN
         RAISERROR('Cuisine not found.', 16, 1);
         RETURN;
@@ -1903,8 +2168,9 @@ BEGIN
 
     -- Check for duplicate name (excluding current cuisine)
     IF EXISTS (
-        SELECT 1 FROM Cuisines 
-        WHERE Name = @Name AND CuisineID != @CuisineID
+        SELECT 1
+    FROM Cuisines
+    WHERE Name = @Name AND CuisineID != @CuisineID
     )
     BEGIN
         RAISERROR('Another cuisine with the same name already exists.', 16, 1);
@@ -1928,14 +2194,18 @@ BEGIN
     SET NOCOUNT ON;
 
     -- Check if cuisine exists
-    IF NOT EXISTS (SELECT 1 FROM Cuisines WHERE CuisineID = @CuisineID)
+    IF NOT EXISTS (SELECT 1
+    FROM Cuisines
+    WHERE CuisineID = @CuisineID)
     BEGIN
         RAISERROR('Cuisine not found.', 16, 1);
         RETURN;
     END
 
     -- Optional: check if it's referenced anywhere (e.g., in RestCuisines)
-    IF EXISTS (SELECT 1 FROM RestCuisines WHERE CuisineID = @CuisineID)
+    IF EXISTS (SELECT 1
+    FROM RestCuisines
+    WHERE CuisineID = @CuisineID)
     BEGIN
         RAISERROR('Cannot delete: Cuisine is linked to restaurants.', 16, 1);
         RETURN;
@@ -1949,13 +2219,14 @@ END;
 GO
 
 --Get all cuisines
-SELECT CuisineID, Name, Description FROM Cuisines;
+SELECT CuisineID, Name, Description
+FROM Cuisines;
 GO
 
 --Get most popular cuisines
 SELECT c.CuisineID, c.Name, COUNT(upc.UserID) AS PreferenceCount
 FROM Cuisines c
-JOIN UserPrefCuisines upc ON c.CuisineID = upc.CuisineID
+    JOIN UserPrefCuisines upc ON c.CuisineID = upc.CuisineID
 GROUP BY c.CuisineID, c.Name
 ORDER BY PreferenceCount DESC;
 GO
@@ -1972,22 +2243,26 @@ CREATE OR ALTER PROCEDURE InsertPayment
 AS
 BEGIN
     -- Ensure that the reservation exists before inserting the payment
-    IF NOT EXISTS (SELECT 1 FROM Reservations WHERE ReservationID = @ReservationID)
+    IF NOT EXISTS (SELECT 1
+    FROM Reservations
+    WHERE ReservationID = @ReservationID)
     BEGIN
         RAISERROR('Invalid ReservationID. Reservation does not exist.', 16, 1);
         RETURN;
     END
 
     -- Insert the new payment
-    INSERT INTO Payments (ReservationID, Amount, PaymentDate, Status, Method)
-    VALUES (@ReservationID, @Amount, GETDATE(), @Status, @Method);
+    INSERT INTO Payments
+        (ReservationID, Amount, PaymentDate, Status, Method)
+    VALUES
+        (@ReservationID, @Amount, GETDATE(), @Status, @Method);
 END;
 GO
 
 --Payment history for a specific user
 SELECT P.*
 FROM Payments P
-JOIN Reservations R ON P.ReservationID = R.ReservationID
+    JOIN Reservations R ON P.ReservationID = R.ReservationID
 WHERE R.UserID = @Userid
 ORDER BY P.PaymentDate DESC;
 GO
@@ -1999,7 +2274,9 @@ CREATE OR ALTER PROCEDURE UpdatePaymentStatus
 AS
 BEGIN
     -- Ensure that the payment exists before updating
-    IF NOT EXISTS (SELECT 1 FROM Payments WHERE PaymentID = @Paymentid)
+    IF NOT EXISTS (SELECT 1
+    FROM Payments
+    WHERE PaymentID = @Paymentid)
     BEGIN
         RAISERROR('Invalid PaymentID. Payment does not exist.', 16, 1);
         RETURN;
@@ -2026,9 +2303,9 @@ GO
 --Total revenue for a restaurant
 SELECT R.RestaurantID, R.Name AS RestaurantName, SUM(P.Amount) AS TotalRevenue
 FROM Payments P
-JOIN Reservations Res ON P.ReservationID = Res.ReservationID
-JOIN Tables T ON Res.TableID = T.TableID
-JOIN Restaurants R ON T.RestaurantID = R.RestaurantID
+    JOIN Reservations Res ON P.ReservationID = Res.ReservationID
+    JOIN Tables T ON Res.TableID = T.TableID
+    JOIN Restaurants R ON T.RestaurantID = R.RestaurantID
 WHERE P.Status = 'Completed' AND R.RestaurantID = @Restaurantid
 GROUP BY R.RestaurantID, R.Name;
 GO
