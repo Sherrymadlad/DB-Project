@@ -5,7 +5,7 @@ const ReservationModel = {
   addReservation: async (userId, tableId, time, duration, people, request) => {
     try {
       const pool = await poolPromise;
-      await pool.request()
+      const result = await pool.request()
         .input('UserID', sql.Int, userId)
         .input('TableID', sql.Int, tableId)
         .input('Time', sql.DateTime, time)
@@ -13,7 +13,7 @@ const ReservationModel = {
         .input('People', sql.Int, people)
         .input('Request', sql.NVarChar(sql.MAX), request)
         .execute('AddReservation');
-      return { message: 'Reservation added successfully' };
+      return { message: 'Reservation added successfully', data: result.recordset[0].ReservationID };
     } catch (error) {
       throw new Error(error.message);
     }

@@ -16,19 +16,36 @@ const ReservationPayment = () => {
     description,
   } = location.state || {};
 
-  const [modal, setModal] = useState({ open: false, success: false, message: "" });
+  const [modal, setModal] = useState({
+    open: false,
+    success: false,
+    message: "",
+  });
 
   const handleConfirm = async () => {
     try {
+      const isoDateTime1 = new Date(dateTime).toISOString();
       const res = await axios.post("http://localhost:5000/api/reservations", {
         userId,
         tableId,
-        time: dateTime,
-        duration: duration*60,
+        time: isoDateTime1,
+        duration: duration * 60,
         people: capacity,
         request: specialRequest,
       });
-      console.log(res);
+      const reservationId = res.data.data;
+      const amount = 100; // Set amount for the reservation
+      const status = "Completed"; // Payment status
+      const method = "Card"; // Payment method
+      const isoDateTime2 = new Date(dateTime).toISOString();
+
+      await axios.post("http://localhost:5000/api/payments", {
+        reservationId,
+        amount,
+        status,
+        method,
+        date: isoDateTime2,
+      });
 
       setModal({ open: true, success: true, message: res.data.message });
     } catch (error) {
@@ -51,13 +68,22 @@ const ReservationPayment = () => {
     <div className="min-h-screen bg-gray-50 p-6 relative">
       {/* Navigation Buttons */}
       <div className="fixed top-6 left--1 flex gap-4 z-10">
-        <Link className="bg-white border px-4 py-2 rounded hover:bg-gray-100" to="/customer/restaurants/details">
+        <Link
+          className="bg-white border px-4 py-2 rounded hover:bg-gray-100"
+          to="/customer/restaurants/details"
+        >
           Details
         </Link>
-        <Link className="bg-theme-pink text-white px-4 py-2 rounded shadow-md" to="/customer/restaurants/reserve">
+        <Link
+          className="bg-theme-pink text-white px-4 py-2 rounded shadow-md"
+          to="/customer/restaurants/reserve"
+        >
           Reserve
         </Link>
-        <Link className="bg-white border px-4 py-2 rounded hover:bg-gray-100" to="/customer/restaurants/reviews">
+        <Link
+          className="bg-white border px-4 py-2 rounded hover:bg-gray-100"
+          to="/customer/restaurants/reviews"
+        >
           Reviews
         </Link>
       </div>
@@ -69,20 +95,39 @@ const ReservationPayment = () => {
       <div className="h-full bg-gray-50 flex flex-col items-center justify-center">
         {/* Reservation Summary */}
         <div className="w-full max-w-md bg-white p-6 rounded shadow-md space-y-3">
-          <h2 className="text-xl font-semibold text-gray-800">Reservation Summary</h2>
+          <h2 className="text-xl font-semibold text-gray-800">
+            Reservation Summary
+          </h2>
 
           {/* Details */}
           <div className="space-y-2">
-            <p className="text-gray-700"><strong>Date:</strong> {new Date(dateTime).toLocaleDateString('en-GB')}</p>
-            <p className="text-gray-700"><strong>Time:</strong> {new Date(dateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-            <p className="text-gray-700"><strong>Duration:</strong> {duration * 60} minutes</p>
-            <p className="text-gray-700"><strong>Table Capacity:</strong> {capacity} seats</p>
-            <p className="text-gray-700"><strong>Table Description:</strong> {description}</p>
+            <p className="text-gray-700">
+              <strong>Date:</strong>{" "}
+              {new Date(dateTime).toLocaleDateString("en-GB")}
+            </p>
+            <p className="text-gray-700">
+              <strong>Time:</strong>{" "}
+              {new Date(dateTime).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </p>
+            <p className="text-gray-700">
+              <strong>Duration:</strong> {duration * 60} minutes
+            </p>
+            <p className="text-gray-700">
+              <strong>Table Capacity:</strong> {capacity} seats
+            </p>
+            <p className="text-gray-700">
+              <strong>Table Description:</strong> {description}
+            </p>
           </div>
 
           {/* Special Request */}
           <div className="space-y-2">
-            <p className="text-gray-700"><strong>Special Requests:</strong></p>
+            <p className="text-gray-700">
+              <strong>Special Requests:</strong>
+            </p>
             <div className="max-h-24 overflow-y-auto p-2 bg-gray-100 rounded text-gray-700 whitespace-pre-wrap">
               {specialRequest || "None"}
             </div>
@@ -90,7 +135,9 @@ const ReservationPayment = () => {
 
           {/* Payment */}
           <div className="space-y-2">
-            <p className="text-gray-700"><strong>Reservation Payment:</strong> Rs. 100</p>
+            <p className="text-gray-700">
+              <strong>Reservation Payment:</strong> Rs. 100
+            </p>
           </div>
 
           {/* Confirm Button */}

@@ -4,7 +4,7 @@ const reviewController = require('../controllers/reviewController');
 
 // Basic review operations
 router.get('/restaurant/:restaurantId', reviewController.getByRestaurant);
-router.get('/user/:userId', reviewController.getByUser);
+router.get('/reviews-user/:userId', reviewController.getByUser);
 router.post('/review', reviewController.addReview);
 router.delete('/:reviewId', reviewController.deleteReview);
 

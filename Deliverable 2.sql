@@ -1473,12 +1473,8 @@ BEGIN
             SELECT 1
         FROM Reservations R
         WHERE R.TableID = T.TableID
-            AND R.Status = 'Approved'
-            AND (
-                    (R.Time BETWEEN @StartTime AND @EndTime) OR
-            (DATEADD(MINUTE, R.Duration, R.Time) BETWEEN @StartTime AND @EndTime) OR
-            (@StartTime BETWEEN R.Time AND DATEADD(MINUTE, R.Duration, R.Time))
-                  )
+            AND R.Status in ('Approved','Completed','Pending')
+            AND (R.Time <= @EndTime AND DATEADD(MINUTE, R.Duration, R.Time) >= @StartTime)
         )
     ORDER BY T.Capacity ASC;
 END;
@@ -1499,8 +1495,8 @@ AS
 BEGIN
     -- Check if user exists
     IF NOT EXISTS (SELECT 1
-    FROM Users
-    WHERE UserID = @UserID)
+                   FROM Users
+                   WHERE UserID = @UserID)
     BEGIN
         RAISERROR('User does not exist.', 16, 1);
         RETURN;
@@ -1508,13 +1504,12 @@ BEGIN
 
     -- Check if table exists
     IF NOT EXISTS (SELECT 1
-    FROM Tables
-    WHERE TableID = @TableID)
+                   FROM Tables
+                   WHERE TableID = @TableID)
     BEGIN
         RAISERROR('Table does not exist.', 16, 1);
         RETURN;
     END
-
 
     -- Check if Duration and People are positive
     IF @Duration <= 0 OR @People <= 0
@@ -1538,6 +1533,9 @@ BEGIN
     -- Insert reservation
     INSERT INTO Reservations (UserID, TableID, Time, Duration, People, Request)
     VALUES (@UserID, @TableID, @Time, @Duration, @People, @Request);
+
+    -- Return the new ReservationID
+    SELECT SCOPE_IDENTITY() AS ReservationID;
 END;
 GO
 
@@ -1779,8 +1777,7 @@ GO
 --View reservations by status optionally for users 
 CREATE OR ALTER PROCEDURE ViewReservationsUser
     @UserID INT,
-    @Status NVARCHAR(10) = NULL
--- Optional: Filter by status
+    @Statuses NVARCHAR(MAX) = NULL
 AS
 BEGIN
     -- Retrieve reservations
@@ -1790,10 +1787,12 @@ BEGIN
         JOIN Tables t ON r.TableID = t.TableID
         JOIN Restaurants res ON t.RestaurantID = res.RestaurantID
     WHERE 
-         r.UserID = @UserID AND
-        (@Status IS NULL OR r.Status = @Status)
+        r.UserID = @UserID AND
+        (
+            @Statuses IS NULL OR
+            r.Status IN (SELECT value FROM STRING_SPLIT(@Statuses, ','))
+        )
     ORDER BY r.Time DESC;
--- Order by reservation time
 END;
 GO
 
@@ -1900,9 +1899,7 @@ WHERE RestaurantID = @Restaurantid;
 GO
 
 --Retrieve all reviews from a specific user
-SELECT *
-FROM Reviews
-WHERE UserID = @Userid;
+SELECT Rating, Comment, Name FROM Reviews JOIN Restaurants ON Restaurants.RestaurantID = Reviews.RestaurantID WHERE UserID = @Userid;
 GO
 
 -- Insert a new review for a specific user
@@ -2203,7 +2200,8 @@ CREATE OR ALTER PROCEDURE InsertPayment
     @ReservationID INT,
     @Amount INT,
     @Status NVARCHAR(10),
-    @Method NVARCHAR(10)
+    @Method NVARCHAR(10),
+	@Date DateTime
 AS
 BEGIN
     -- Ensure that the reservation exists before inserting the payment
@@ -2219,16 +2217,26 @@ BEGIN
     INSERT INTO Payments
         (ReservationID, Amount, PaymentDate, Status, Method)
     VALUES
-        (@ReservationID, @Amount, GETDATE(), @Status, @Method);
+        (@ReservationID, @Amount, @Date, @Status, @Method);
 END;
 GO
 
 --Payment history for a specific user
-SELECT P.*
-FROM Payments P
-    JOIN Reservations R ON P.ReservationID = R.ReservationID
-WHERE R.UserID = @Userid
-ORDER BY P.PaymentDate DESC;
+SELECT 
+    P.*, 
+    Res.Name
+FROM 
+    Payments P
+JOIN 
+    Reservations R ON P.ReservationID = R.ReservationID
+JOIN 
+    Tables T ON R.TableID = T.TableID
+JOIN 
+    Restaurants Res ON T.RestaurantID = Res.RestaurantID
+WHERE 
+    R.UserID = @UserID
+ORDER BY 
+    P.PaymentDate DESC;
 GO
 
 --Update Payment status
