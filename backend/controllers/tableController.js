@@ -82,7 +82,7 @@ exports.getTablesByCapacity = async (req, res) => {
 exports.getTablesByCapacityAndTime = async (req, res) => {
   try {
     const { minCapacity, startTime, durationMinutes } = req.query;
-    const result = await TableModel.getTablesByCapacity(req.params.id, minCapacity, startTime, durationMinutes);
+    const result = await TableModel.getTablesByCapacityAndTime(req.params.id, minCapacity, startTime, parseInt(durationMinutes));
     res.status(200).json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });

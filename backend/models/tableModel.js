@@ -119,15 +119,15 @@ const TableModel = {
   },
 
   //Retrieve tables by their capacity and time
-  getTablesByCapacityAndTime: async (restaurantId, minCapacity = null, startTime, duration) => {
+  getTablesByCapacityAndTime: async (restaurantId, minCapacity = null, startTime, durationMinutes) => {
     try {
       const pool = await poolPromise;
       const result = await pool.request()
         .input('RestaurantID', sql.Int, restaurantId)
         .input('MinCapacity', sql.Int, minCapacity)
         .input('StartTime', sql.DateTime, startTime)
-        .input('DurationMinutes', sql.Int, duration)
-        .execute('GetTablesByCapacityAndTime');
+        .input('DurationMinutes', sql.Int, durationMinutes)
+        .execute('GetAvailableTablesByCapacityAndTime');
       return result.recordset;
     } catch (error) {
       throw new Error(error.message);

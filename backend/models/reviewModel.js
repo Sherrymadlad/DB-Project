@@ -20,7 +20,7 @@ module.exports = {
       const pool = await poolPromise;
       const result = await pool.request()
         .input('Userid', sql.Int, userId)
-        .query('SELECT * FROM Reviews WHERE UserID = @Userid');
+        .query('SELECT Rating, Comment, Name FROM Reviews JOIN Restaurants ON Restaurants.RestaurantID = Reviews.RestaurantID WHERE UserID = @Userid');
       return result.recordset;
     } catch (error) {
       throw new Error(error.message);

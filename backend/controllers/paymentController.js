@@ -3,8 +3,8 @@ const PaymentModel = require('../models/paymentModel');
 // Insert a new payment
 exports.insertPayment = async (req, res) => {
   try {
-    const { reservationId, amount, status, method } = req.body;
-    const response = await PaymentModel.insertPayment(reservationId, amount, status, method);
+    const { reservationId, amount, status, method, date } = req.body;
+    const response = await PaymentModel.insertPayment(reservationId, amount, status, method, date);
     res.status(201).json(response);
   } catch (err) {
     res.status(500).json({ error: err.message });

@@ -7,7 +7,7 @@ module.exports = {
       const data = await ReservationModel.addReservation(
         userId, tableId, time, duration, people, specialRequest || null
       );
-      res.status(201).json({ success: true, message: data.message });
+      res.status(201).json({ success: true, message: data.message, data: data.data });
     } catch (error) {
       res.status(500).json({ success: false, message: 'Failed to add reservation', error: error.message });
     }

@@ -2,7 +2,7 @@ const { sql, poolPromise } = require('../config/db');
 
 const PaymentModel = {
   // Insert a new payment
-  insertPayment: async (reservationId, amount, status, method) => {
+  insertPayment: async (reservationId, amount, status, method, date) => {
     try {
       const pool = await poolPromise;
       await pool.request()
@@ -10,6 +10,7 @@ const PaymentModel = {
         .input('Amount', sql.Int, amount)
         .input('Status', sql.NVarChar, status)
         .input('Method', sql.NVarChar, method)
+        .input('Date', sql.DateTime, date)
         .execute('InsertPayment');
 
       return { message: 'Payment inserted successfully' };
@@ -25,11 +26,21 @@ const PaymentModel = {
       const result = await pool.request()
         .input('Userid', sql.Int, userId)
         .query(`
-          SELECT P.*
-          FROM Payments P
-          JOIN Reservations R ON P.ReservationID = R.ReservationID
-          WHERE R.UserID = @Userid
-          ORDER BY P.PaymentDate DESC
+          SELECT 
+              P.*, 
+              Res.Name
+          FROM 
+              Payments P
+          JOIN 
+              Reservations R ON P.ReservationID = R.ReservationID
+          JOIN 
+              Tables T ON R.TableID = T.TableID
+          JOIN 
+              Restaurants Res ON T.RestaurantID = Res.RestaurantID
+          WHERE 
+              R.UserID = @UserID
+          ORDER BY 
+              P.PaymentDate DESC;
         `);
 
       return result.recordset;

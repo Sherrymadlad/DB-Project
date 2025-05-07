@@ -9,6 +9,7 @@ const tableRoutes = require('./routes/tableRoutes');
 const reservationRoutes = require('./routes/reservationRoutes');
 const reviewRoutes = require('./routes/reviewRoutes');
 const cuisineRoutes = require('./routes/cuisineRoutes');
+const paymentRoutes = require('./routes/paymentRoutes');
 
 const app = express();
 app.use(express.json());
@@ -21,6 +22,7 @@ app.use('/api', tableRoutes);
 app.use('/api', reservationRoutes);
 app.use('/api', reviewRoutes);
 app.use('/api', cuisineRoutes);
+app.use('/api', paymentRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server is running on http://localhost:${PORT}`));
