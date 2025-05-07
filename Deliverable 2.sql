@@ -1958,7 +1958,7 @@ END;
 GO
 
 --Average rating of a restaurant
-SELECT RestaurantID, AVG(Rating) AS AverageRating
+SELECT RestaurantID, AVG(CAST(Rating AS FLOAT)) AS AverageRating
 FROM Reviews
 WHERE RestaurantID = @RestaurantID
 GROUP BY RestaurantID;

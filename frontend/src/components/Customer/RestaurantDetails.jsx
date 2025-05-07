@@ -123,7 +123,7 @@ const RestaurantDetails = () => {
             <p><strong>Phone:</strong> {restaurant.PhoneNum}</p>
           </div>
 
-          <div className="flex flex-col items-end mr-20">
+          <div className="flex flex-col items-end gap-2 mr-20">
             <button onClick={handleLike} className="mt-2">
               {liked ? (
                 <HeartSolid className="h-8 w-8 text-red-500" />
@@ -131,7 +131,8 @@ const RestaurantDetails = () => {
                 <HeartOutline className="h-8 w-8 text-gray-400 hover:text-red-400" />
               )}
             </button>
-            <div className="flex gap-1 mt-8">{getStarRating(rating)}</div>
+            <div className="text-theme-pink font-semibold text-4xl mt-4">{rating.toFixed(1)}</div>
+            <div className="flex gap-1">{getStarRating(rating)}</div>
           </div>
         </div>
       </div>

@@ -63,7 +63,7 @@ module.exports = {
       const result = await pool.request()
         .input('RestaurantID', sql.Int, restaurantId)
         .query(`
-          SELECT RestaurantID, AVG(Rating) AS AverageRating
+          SELECT RestaurantID, AVG(CAST(Rating AS FLOAT)) AS AverageRating
           FROM Reviews
           WHERE RestaurantID = @RestaurantID
           GROUP BY RestaurantID
