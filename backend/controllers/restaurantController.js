@@ -84,11 +84,11 @@ const RestaurantController = {
 
   // Search for restaurants with filters
   searchRestaurants: async (req, res) => {
-    const { userId, searchTerm, filterBy, location, sortBy } = req.query;
+    const { userId, filterBy, location, sortBy } = req.query;
     try {
-      const response = await RestaurantModel.searchRestaurants({ userId, searchTerm, filterBy, location, sortBy });
+      const response = await RestaurantModel.searchRestaurants({ userId, filterBy, location, sortBy });
       if (!response.success) {
-        return res.status(404).json({ success: false, message: response.message });
+        return res.status(200).json({ success: false, message: response.message, data: [] });
       }
       return res.status(200).json({ success: true, message: 'Restaurants fetched successfully', data: response.data });
     } catch (error) {
@@ -238,7 +238,7 @@ const RestaurantController = {
       return res.status(200).json({
         success: true,
         message: 'Images fetched successfully',
-        data: images || [] // Ensure empty list is returned even if undefined
+        data: images.data || [] // Ensure empty list is returned even if undefined
       });
     } catch (error) {
       return res.status(500).json({

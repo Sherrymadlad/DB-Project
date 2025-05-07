@@ -21,7 +21,8 @@ exports.getUserById = async (req, res) => {
 
 exports.createUser = async (req, res) => {
   try {
-    const { name, username, password, email, phoneNum, role, profilePic } = req.body;
+    const { name, username, password, email, phoneNum, role } = req.body;
+    const profilePic = req.file ? req.file.buffer : null;
     const response = await UserModel.createUser(name, username, password, email, phoneNum, role, profilePic || null);
     res.status(201).json(response);
   } catch (err) {
