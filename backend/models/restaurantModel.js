@@ -119,7 +119,7 @@ const RestaurantModel = {
       const pool = await poolPromise;
       const result = await pool.request()
         .input('RestaurantID', sql.Int, RestaurantID)
-        .execute('GetRestaurantAdmins');
+        .query("SELECT U.UserID, U.Name, U.Email, U.PhoneNum FROM Users U JOIN RestaurantAdmins RA ON U.UserID = RA.UserID WHERE RA.RestaurantID = @RestaurantID;  ")
       if (result.recordset.length === 0) {
         return { success: false, message: 'No admins found for this restaurant' };
       }
@@ -135,7 +135,7 @@ const RestaurantModel = {
       const pool = await poolPromise;
       const result = await pool.request()
         .input('RestaurantID', sql.Int, RestaurantID)
-        .execute('GetRestaurantStaff');
+        .query("SELECT U.UserID, U.Name, U.Email, U.PhoneNum FROM Users U JOIN RestaurantStaff RS ON U.UserID = RS.UserID WHERE RS.RestaurantID = @RestaurantID;  ");
       if (result.recordset.length === 0) {
         return { success: false, message: 'No staff found for this restaurant' };
       }
@@ -162,13 +162,13 @@ const RestaurantModel = {
   },
 
   // Assign an admin to the restaurant
-  assignAdmin: async ({ RestaurantID, UserID, TargetUserID }) => {
+  assignAdmin: async ({ RestaurantID, UserID, TargetUsername }) => {
     try {
       const pool = await poolPromise;
       await pool.request()
         .input('RestaurantID', sql.Int, RestaurantID)
         .input('UserID', sql.Int, UserID)
-        .input('TargetUserID', sql.Int, TargetUserID)
+        .input('TargetUsername', sql.NVarChar(20), TargetUsername)
         .execute('AssignRestaurantAdmin');
       return { success: true, message: 'Admin assigned successfully' };
     } catch (error) {
@@ -192,13 +192,13 @@ const RestaurantModel = {
   },
 
   // Assign a staff member to the restaurant
-  assignStaff: async ({ RestaurantID, UserID, TargetUserID }) => {
+  assignStaff: async ({ RestaurantID, UserID, TargetUsername }) => {
     try {
       const pool = await poolPromise;
       await pool.request()
         .input('RestaurantID', sql.Int, RestaurantID)
         .input('UserID', sql.Int, UserID)
-        .input('TargetUserID', sql.Int, TargetUserID)
+        .input('TargetUsername', sql.NVarChar(20), TargetUsername)
         .execute('AssignRestaurantStaff');
       return { success: true, message: 'Staff assigned successfully' };
     } catch (error) {

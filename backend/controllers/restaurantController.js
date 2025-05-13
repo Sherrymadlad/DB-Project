@@ -98,10 +98,10 @@ const RestaurantController = {
 
   // Assign an admin to a restaurant
   assignAdmin: async (req, res) => {
-    const { UserID, TargetUserID } = req.body;
+    const { UserID, TargetUsername } = req.body;
     const RestaurantID = parseInt(req.params.id);
     try {
-      const response = await RestaurantModel.assignAdmin({ RestaurantID, UserID, TargetUserID });
+      const response = await RestaurantModel.assignAdmin({ RestaurantID, UserID, TargetUsername });
       if (!response.success) {
         return res.status(400).json({ success: false, message: response.message });
       }
@@ -128,15 +128,15 @@ const RestaurantController = {
 
   // Assign staff to a restaurant
   assignStaff: async (req, res) => {
-    const { UserID, TargetUserID } = req.body;
+    const { UserID, TargetUsername } = req.body;
     const RestaurantID = parseInt(req.params.id);
 
-    if (!UserID || !TargetUserID || isNaN(RestaurantID)) {
-      return res.status(400).json({ success: false, message: 'UserID, TargetUserID, and valid RestaurantID are required' });
+    if (!UserID || !TargetUsername || isNaN(RestaurantID)) {
+      return res.status(400).json({ success: false, message: 'UserID, TargetUsername, and valid RestaurantID are required' });
     }
 
     try {
-      const response = await RestaurantModel.assignStaff({ RestaurantID, UserID, TargetUserID });
+      const response = await RestaurantModel.assignStaff({ RestaurantID, UserID, TargetUsername });
       if (!response.success) {
         return res.status(400).json({ success: false, message: response.message });
       }

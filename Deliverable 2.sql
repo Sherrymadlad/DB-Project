@@ -735,10 +735,15 @@ CREATE OR ALTER PROCEDURE AssignRestaurantAdmin
     @RestaurantID INT,
     @UserID INT,
     -- The user requesting the action
-    @TargetUserID INT
+    @TargetUsername nvarchar(20)
 -- The user being assigned as admin
 AS
 BEGIN
+	  DECLARE @TargetUserID INT;
+	SELECT @TargetUserID = UserID
+    FROM Users
+    WHERE Username = @TargetUsername;
+
     -- Check if the requester (@UserID) is an Admin of the restaurant
     IF NOT EXISTS (SELECT 1
     FROM RestaurantAdmins
