@@ -84,7 +84,7 @@ const UserModel = {
   },
 
   //Update user info
-  updateUser: async (userId, name, username, email, phoneNum) => {
+  updateUser: async (userId, name, username, email, phoneNum, profilePic=null) => {
     try {
       const pool = await poolPromise;
       
@@ -102,6 +102,11 @@ const UserModel = {
       if (phoneNum) {
         request.input('PhoneNum', sql.NVarChar, phoneNum);
       }
+      if (profilePic) {
+        request.input('ProfilePic', sql.VarBinary, profilePic);
+    } else {
+        request.input('ProfilePic', sql.VarBinary, null);
+    }
 
       await request.execute('UpdateUser');
       

@@ -7,7 +7,7 @@ const upload = require('../config/multerConfig');
 router.get('/users', userController.getUsers);
 router.post('/users', upload.single('profilePic'), userController.createUser);
 router.get('/users/:id', userController.getUserById);
-router.put('/users/:id', userController.updateUser);
+router.put('/users/:id', upload.single('profilePic'), userController.updateUser);
 router.delete('/users/:id', userController.deleteUser);
 
 // Authentication

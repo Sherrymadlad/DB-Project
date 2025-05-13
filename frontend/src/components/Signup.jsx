@@ -1,17 +1,17 @@
-import React, { useState } from 'react';
-import axios from 'axios'; // Import axios for making API calls
-import background from '../assets/signup-bg.jpg';
-import { UserCircleIcon } from '@heroicons/react/24/solid';
-import { useNavigate } from 'react-router-dom'; // Use for navigation after successful signup
+import React, { useState } from "react";
+import axios from "axios"; // Import axios for making API calls
+import background from "../assets/signup-bg.jpg";
+import { UserCircleIcon } from "@heroicons/react/24/solid";
+import { useNavigate } from "react-router-dom"; // Use for navigation after successful signup
 
 const Signup = () => {
   const [formData, setFormData] = useState({
-    name: '',
-    username: '',
-    email: '',
-    password: '',
-    phone: '',
-    role: 'customer',
+    name: "",
+    username: "",
+    email: "",
+    password: "",
+    phone: "",
+    role: "customer",
     profilePic: null,
   });
   const [preview, setPreview] = useState(null);
@@ -23,7 +23,7 @@ const Signup = () => {
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
-    if (name === 'profilePic') {
+    if (name === "profilePic") {
       const file = files[0];
       setFormData({ ...formData, profilePic: file });
       if (file) {
@@ -42,9 +42,12 @@ const Signup = () => {
 
     if (!formData.name.trim()) newErrors.name = "Full name is required.";
     if (!formData.username.trim()) newErrors.username = "Username is required.";
-    if (!formData.email.trim() || !/^\S+@\S+\.\S+$/.test(formData.email)) newErrors.email = "Invalid email address.";
-    if (!formData.password || formData.password.length < 6) newErrors.password = "Password must be at least 6 characters.";
-    if (!formData.phone.trim() || !/^\d{10,15}$/.test(formData.phone)) newErrors.phone = "Enter a valid phone number.";
+    if (!formData.email.trim() || !/^\S+@\S+\.\S+$/.test(formData.email))
+      newErrors.email = "Invalid email address.";
+    if (!formData.password || formData.password.length < 6)
+      newErrors.password = "Password must be at least 6 characters.";
+    if (!formData.phone.trim() || !/^\d{10,15}$/.test(formData.phone))
+      newErrors.phone = "Enter a valid phone number.";
     if (!formData.role) newErrors.role = "Role selection is required.";
 
     return Object.keys(newErrors).length > 0 ? newErrors : null;
@@ -63,29 +66,34 @@ const Signup = () => {
     }
 
     const userPayload = new FormData();
-    userPayload.append('name', formData.name);
-    userPayload.append('username', formData.username);
-    userPayload.append('email', formData.email);
-    userPayload.append('password', formData.password);
-    userPayload.append('phoneNum', formData.phone);
-    userPayload.append('role', formData.role);
-    if (formData.profilePic) userPayload.append('profilePic', formData.profilePic);
+    userPayload.append("name", formData.name);
+    userPayload.append("username", formData.username);
+    userPayload.append("email", formData.email);
+    userPayload.append("password", formData.password);
+    userPayload.append("phoneNum", formData.phone);
+    userPayload.append("role", formData.role);
+    if (formData.profilePic)
+      userPayload.append("profilePic", formData.profilePic);
 
     try {
-      const response = await axios.post('http://localhost:5000/api/users', userPayload, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      const response = await axios.post(
+        "http://localhost:5000/api/users",
+        userPayload,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
 
       console.log("User created successfully:", response.data);
 
       // Fetch user details after creation (using the user ID from the response)
-      const userId = response.data.userId; 
+      const userId = response.data.userId;
 
       // Store the user ID in local storage
-      localStorage.setItem('userID', userId);
-    
+      localStorage.setItem("userId", userId);
+
       setModalVisible(true); // Show the modal on successful signup
     } catch (err) {
       setLoading(false); // Reset loading state after API call
@@ -95,34 +103,34 @@ const Signup = () => {
         const message = err.response.data.error;
 
         // Specific error handling based on the stored procedure error messages
-        if (message.includes('role')) {
+        if (message.includes("role")) {
           setErrors((prevErrors) => ({
             ...prevErrors,
-            role: 'Invalid role specified. Valid roles are: Customer, Admin, Staff.',
+            role: "Invalid role specified. Valid roles are: Customer, Admin, Staff.",
           }));
         }
-        if (message.includes('username')) {
+        if (message.includes("username")) {
           setErrors((prevErrors) => ({
             ...prevErrors,
-            username: 'Username is already taken.',
+            username: "Username is already taken.",
           }));
         }
-        if (message.includes('email')) {
+        if (message.includes("email")) {
           setErrors((prevErrors) => ({
             ...prevErrors,
-            email: 'Email is already registered.',
+            email: "Email is already registered.",
           }));
         }
-        if (message.includes('phoneNum')) {
+        if (message.includes("phoneNum")) {
           setErrors((prevErrors) => ({
             ...prevErrors,
-            phone: 'Phone number is already in use.',
+            phone: "Phone number is already in use.",
           }));
         }
       } else {
         // In case of network error or other unexpected errors
         setErrors({
-          api: err.message || 'Signup failed. Please try again later.',
+          api: err.message || "Signup failed. Please try again later.",
         });
       }
     }
@@ -130,12 +138,12 @@ const Signup = () => {
 
   const handleModalClose = () => {
     setModalVisible(false);
-    if (formData.role === 'Admin') {
-      navigate('/admin/restaurants');
-    } else if (formData.role === 'Staff') {
-      navigate('/staff/reservations');
+    if (formData.role === "Admin") {
+      navigate("/admin/restaurants");
+    } else if (formData.role === "Staff") {
+      navigate("/staff/reservations");
     } else {
-      navigate('/customer/restaurants');
+      navigate("/customer/restaurants");
     }
   };
 
@@ -144,13 +152,21 @@ const Signup = () => {
       <div className="text-4xl text-theme-pink p-6 font-bold border-b-2">
         Signup
       </div>
-      <div className='h-full w-full text-theme-brown text-shadow-2xs' style={{ backgroundImage: `url(${background})` }}>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-4 px-8 w-full justify-center items-center">
-          <div className='flex flex-row w-full gap-4 px-2'>
+      <div
+        className="h-full w-full text-theme-brown text-shadow-2xs"
+        style={{ backgroundImage: `url(${background})` }}
+      >
+        <form
+          onSubmit={handleSubmit}
+          className="flex flex-col gap-4 p-4 px-8 w-full justify-center items-center"
+        >
+          <div className="flex flex-row w-full gap-4 px-2">
             <div className="flex flex-col gap-4 p-6 w-1/2">
               {/* Form fields */}
               <div className="flex flex-col">
-                <label htmlFor="name" className="text-sm font-semibold">Full Name</label>
+                <label htmlFor="name" className="text-sm font-semibold">
+                  Full Name
+                </label>
                 <input
                   type="text"
                   name="name"
@@ -160,10 +176,14 @@ const Signup = () => {
                   className="border p-2 rounded bg-white focus:outline-none focus:ring-2 focus:ring-theme-pink"
                   required
                 />
-                {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
+                {errors.name && (
+                  <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+                )}
               </div>
               <div className="flex flex-col">
-                <label htmlFor="username" className="text-sm font-semibold">Username</label>
+                <label htmlFor="username" className="text-sm font-semibold">
+                  Username
+                </label>
                 <input
                   type="text"
                   name="username"
@@ -173,10 +193,14 @@ const Signup = () => {
                   className="border p-2 rounded bg-white focus:outline-none focus:ring-2 focus:ring-theme-pink"
                   required
                 />
-                {errors.username && <p className="text-red-500 text-sm mt-1">{errors.username}</p>}
+                {errors.username && (
+                  <p className="text-red-500 text-sm mt-1">{errors.username}</p>
+                )}
               </div>
               <div className="flex flex-col">
-                <label htmlFor="email" className="text-sm font-semibold">Email</label>
+                <label htmlFor="email" className="text-sm font-semibold">
+                  Email
+                </label>
                 <input
                   type="email"
                   name="email"
@@ -186,10 +210,14 @@ const Signup = () => {
                   className="border p-2 rounded bg-white focus:outline-none focus:ring-2 focus:ring-theme-pink"
                   required
                 />
-                {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+                {errors.email && (
+                  <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+                )}
               </div>
               <div className="flex flex-col">
-                <label htmlFor="password" className="text-sm font-semibold">Password</label>
+                <label htmlFor="password" className="text-sm font-semibold">
+                  Password
+                </label>
                 <input
                   type={showPassword ? "text" : "password"}
                   name="password"
@@ -199,7 +227,9 @@ const Signup = () => {
                   className="border p-2 rounded bg-white focus:outline-none focus:ring-2 focus:ring-theme-pink"
                   required
                 />
-                {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
+                {errors.password && (
+                  <p className="text-red-500 text-sm mt-1">{errors.password}</p>
+                )}
                 <label className="text-xs mt-1 flex gap-2 items-center">
                   <input
                     type="checkbox"
@@ -211,7 +241,9 @@ const Signup = () => {
                 </label>
               </div>
               <div className="flex flex-col">
-                <label htmlFor="phone" className="text-sm font-semibold">Phone Number</label>
+                <label htmlFor="phone" className="text-sm font-semibold">
+                  Phone Number
+                </label>
                 <input
                   type="tel"
                   name="phone"
@@ -221,10 +253,14 @@ const Signup = () => {
                   className="border p-2 rounded bg-white focus:outline-none focus:ring-2 focus:ring-theme-pink"
                   required
                 />
-                {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
+                {errors.phone && (
+                  <p className="text-red-500 text-sm mt-1">{errors.phone}</p>
+                )}
               </div>
               <div className="flex flex-col">
-                <label htmlFor="role" className="text-sm font-semibold">Role</label>
+                <label htmlFor="role" className="text-sm font-semibold">
+                  Role
+                </label>
                 <select
                   name="role"
                   id="role"
@@ -233,11 +269,13 @@ const Signup = () => {
                   className="border p-2 rounded bg-white focus:outline-none focus:ring-2 focus:ring-theme-pink"
                   required
                 >
-                  <option value="customer">Customer</option>
-                  <option value="staff">Staff</option>
-                  <option value="admin">Admin</option>
+                  <option value="Customer">Customer</option>
+                  <option value="Staff">Staff</option>
+                  <option value="Admin">Admin</option>
                 </select>
-                {errors.role && <p className="text-red-500 text-sm mt-1">{errors.role}</p>}
+                {errors.role && (
+                  <p className="text-red-500 text-sm mt-1">{errors.role}</p>
+                )}
               </div>
             </div>
             <div className="flex flex-col justify-center items-center gap-2 w-1/2">
@@ -261,10 +299,15 @@ const Signup = () => {
                   className="absolute inset-0 opacity-0 cursor-pointer"
                 />
               </label>
-              <span className="text-lg font-semibold text-shadow-2xs">Upload Profile Picture</span>
+              <span className="text-lg font-semibold text-shadow-2xs">
+                Upload Profile Picture
+              </span>
             </div>
           </div>
-          {errors.api && <p className="text-red-500 text-center mt-4">{errors.api}</p>} {/* API error message */}
+          {errors.api && (
+            <p className="text-red-500 text-center mt-4">{errors.api}</p>
+          )}{" "}
+          {/* API error message */}
           <button
             type="submit"
             className="bg-theme-pink text-white text-lg px-4 py-2 mt-6 rounded-md w-1/2"
@@ -279,7 +322,9 @@ const Signup = () => {
       {modalVisible && (
         <div className="fixed inset-0 backdrop-blur-xs flex justify-center items-center">
           <div className="bg-white p-8 rounded-md text-center">
-            <h2 className="text-xl font-semibold">Account Created Successfully!</h2>
+            <h2 className="text-xl font-semibold">
+              Account Created Successfully!
+            </h2>
             <button
               onClick={handleModalClose}
               className="mt-4 bg-theme-pink text-white px-4 py-2 rounded"

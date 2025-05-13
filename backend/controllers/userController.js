@@ -41,8 +41,9 @@ exports.deleteUser = async (req, res) => {
 
 exports.updateUser = async (req, res) => {
   try {
-    const { name, username, email, phoneNum } = req.body; 
-    const response = await UserModel.updateUser(req.params.id, name, username, email, phoneNum);
+    const { name, username, email, phoneNum} = req.body; 
+    const profilePic = req.file ? req.file.buffer : null;
+    const response = await UserModel.updateUser(req.params.id, name, username, email, phoneNum, profilePic || null);
     res.status(200).json(response);
   } catch (err) {
     res.status(500).json({ error: err.message });
