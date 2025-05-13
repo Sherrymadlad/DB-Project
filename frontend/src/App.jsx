@@ -10,6 +10,7 @@ import CustomerCurrentReservations from "./components/Customer/CurrentReservatio
 import CustomerPastReservations from "./components/Customer/PastReservations";
 import CustomerReservationConfirmation from "./components/Customer/ReservationConfirmation";
 import CustomerReservationPayment from "./components/Customer/ReservationPayment";
+import CustomerModifyReservation from "./components/Customer/ModifyReservation";
 import CustomerAddReviews from "./components/Customer/AddReviews";
 import CustomerPastReviews from "./components/Customer/PastReviews";
 import CustomerPayments from "./components/Customer/Payments";
@@ -47,6 +48,7 @@ function App() {
           <Route path="reviews" element={<CustomerAddReviews />} />
           <Route path="reviews/past" element={<CustomerPastReviews />} />
           <Route path="payments" element={<CustomerPayments />} />
+          <Route path="reservations/modify" element={<CustomerModifyReservation />} />
           <Route path="profile" element={<CustomerProfile />} />
         </Route>
 
