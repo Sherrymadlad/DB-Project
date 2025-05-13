@@ -34,8 +34,7 @@ BEGIN
                    WHERE Role = @Role)
     BEGIN
         SET @FieldErrors = @FieldErrors + 'role: Invalid role specified. Valid roles are: Customer, Admin, Staff.' + CHAR(13);
-    END
-
+    END 
     -- Check if user already exists with the same username
     IF EXISTS (SELECT 1 FROM Users WHERE Username = @Username)
     BEGIN
@@ -93,42 +92,49 @@ CREATE OR ALTER PROCEDURE UpdateUser
     @Name NVARCHAR(50) = NULL,
     @Username NVARCHAR(20) = NULL,
     @Email NVARCHAR(100) = NULL,
-    @PhoneNum NVARCHAR(13) = NULL
+    @PhoneNum NVARCHAR(13) = NULL,
+    @ProfilePic VARBINARY(MAX) = NULL
 AS
 BEGIN
+    DECLARE @ErrorMessage NVARCHAR(MAX) = '';
+
     -- Check if the user exists
-    IF NOT EXISTS (SELECT 1
-    FROM Users
-    WHERE UserID = @UserID)
+    IF NOT EXISTS (
+        SELECT 1 FROM Users WHERE UserID = @UserID
+    )
     BEGIN
         RAISERROR ('User not found.', 16, 1);
         RETURN;
     END
 
-    -- Check if the new username is unique (excluding the current user)
-    IF @Username IS NOT NULL AND EXISTS (SELECT 1
-        FROM Users
-        WHERE Username = @Username AND UserID <> @UserID)
+    -- Username already exists
+    IF @Username IS NOT NULL AND EXISTS (
+        SELECT 1 FROM Users WHERE Username = @Username AND UserID <> @UserID
+    )
     BEGIN
-        RAISERROR ('Username already exists.', 16, 1);
-        RETURN;
+        SET @ErrorMessage += 'Username already exists. ';
     END
 
-    -- Check if the new email is unique (excluding the current user)
-    IF @Email IS NOT NULL AND EXISTS (SELECT 1
-        FROM Users
-        WHERE Email = @Email AND UserID <> @UserID)
+    -- Email already exists
+    IF @Email IS NOT NULL AND EXISTS (
+        SELECT 1 FROM Users WHERE Email = @Email AND UserID <> @UserID
+    )
     BEGIN
-        RAISERROR ('Email already exists.', 16, 1);
-        RETURN;
+        SET @ErrorMessage += 'Email already exists. ';
     END
 
-    -- Check if the new phone number is unique (excluding the current user)
-    IF @PhoneNum IS NOT NULL AND EXISTS (SELECT 1
-        FROM Users
-        WHERE PhoneNum = @PhoneNum AND UserID <> @UserID)
+    -- Phone number already exists
+    IF @PhoneNum IS NOT NULL AND EXISTS (
+        SELECT 1 FROM Users WHERE PhoneNum = @PhoneNum AND UserID <> @UserID
+    )
     BEGIN
-        RAISERROR ('Phone number already exists.', 16, 1);
+        SET @ErrorMessage += 'Phone number already exists. ';
+    END
+
+    -- Raise combined error if any
+    IF LEN(@ErrorMessage) > 0
+    BEGIN
+        RAISERROR (@ErrorMessage, 16, 1);
         RETURN;
     END
 
@@ -138,7 +144,8 @@ BEGIN
         Name = COALESCE(@Name, Name),
         Username = COALESCE(@Username, Username),
         Email = COALESCE(@Email, Email),
-        PhoneNum = COALESCE(@PhoneNum, PhoneNum)
+        PhoneNum = COALESCE(@PhoneNum, PhoneNum),
+		ProfilePic = COALESCE(@ProfilePic, ProfilePic)
     WHERE UserID = @UserID;
 END;
 GO
