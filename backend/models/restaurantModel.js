@@ -122,7 +122,7 @@ const RestaurantModel = {
       const pool = await poolPromise;
       const result = await pool.request()
         .input('RestaurantID', sql.Int, RestaurantID)
-        .query("SELECT U.UserID, U.Name, U.Email, U.PhoneNum FROM Users U JOIN RestaurantAdmins RA ON U.UserID = RA.UserID WHERE RA.RestaurantID = @RestaurantID;  ")
+        .query("SELECT U.UserID, U.Name, U.Email, U.PhoneNum, U.ProfilePic FROM Users U JOIN RestaurantAdmins RA ON U.UserID = RA.UserID WHERE RA.RestaurantID = @RestaurantID;  ")
       if (result.recordset.length === 0) {
         return { success: false, message: 'No admins found for this restaurant' };
       }
@@ -138,7 +138,7 @@ const RestaurantModel = {
       const pool = await poolPromise;
       const result = await pool.request()
         .input('RestaurantID', sql.Int, RestaurantID)
-        .query("SELECT U.UserID, U.Name, U.Email, U.PhoneNum FROM Users U JOIN RestaurantStaff RS ON U.UserID = RS.UserID WHERE RS.RestaurantID = @RestaurantID;  ");
+        .query("SELECT U.UserID, U.Name, U.Email, U.PhoneNum, U.ProfilePic FROM Users U JOIN RestaurantStaff RS ON U.UserID = RS.UserID WHERE RS.RestaurantID = @RestaurantID;  ");
       if (result.recordset.length === 0) {
         return { success: false, message: 'No staff found for this restaurant' };
       }
