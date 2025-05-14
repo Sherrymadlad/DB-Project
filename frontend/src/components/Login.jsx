@@ -16,25 +16,29 @@ const Login = () => {
     e.preventDefault();
     setError("");
     setLoading(true);
-  
+
     try {
-      const authRes = await axios.post("http://localhost:5000/api/users/authenticate", {
-        username,
-        password,
-      });
+      const authRes = await axios.post(
+        "http://localhost:5000/api/users/authenticate",
+        {
+          username,
+          password,
+        }
+      );
 
-      const user  = authRes.data;
-
+      const user = authRes.data.data;
+      const restaurantId = authRes.data.id;
       // Save user info
       localStorage.setItem("userId", JSON.stringify(user.UserID));
+      localStorage.setItem("restaurantId",restaurantId);
 
       const userRole = user.Role;
-  
+
       // Navigate based on role
       if (userRole === "Admin") {
         navigate("/admin/restaurants");
-      } else if (userRole === "Staff") {
-        navigate("/staff/reservations");
+      } else if (userRole === "Staff") {        
+       navigate("/staff/reservations");
       } else {
         navigate("/customer/restaurants");
       }
@@ -57,7 +61,9 @@ const Login = () => {
 
       <div className="w-1/2 flex items-center justify-center bg-gray-100">
         <div className="flex flex-col gap-6 rounded-2xl w-[80%] max-w-md p-10 bg-white shadow-2xl">
-          <h2 className="text-2xl font-semibold text-center">Login to Your Account</h2>
+          <h2 className="text-2xl font-semibold text-center">
+            Login to Your Account
+          </h2>
 
           <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
             <div className="flex flex-col">
@@ -93,7 +99,9 @@ const Login = () => {
               </label>
             </div>
 
-            {error && <p className="text-sm text-red-500 text-center">{error}</p>}
+            {error && (
+              <p className="text-sm text-red-500 text-center">{error}</p>
+            )}
 
             <button
               type="submit"

@@ -1,67 +1,102 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import axios from "axios";
 
 const UpcomingReservations = () => {
-  const [reservations, setReservations] = useState([
-    {
-      id: 1,
-      restaurant: "The Spice Route",
-      date: "2025-05-05",
-      time: "7:00 PM",
-      people: 4,
-      status: "Approved",
-      user: "Ali Khan",
-    },
-    {
-      id: 2,
-      restaurant: "Cafe Mocha",
-      date: "2025-05-12",
-      time: "1:30 PM",
-      people: 2,
-      status: "Pending",
-      user: "Sara Ahmed",
-    },
-    {
-      id: 3,
-      restaurant: "Sushi World",
-      date: "2025-05-05",
-      time: "8:00 PM",
-      people: 3,
-      status: "Approved",
-      user: "Usman Raza",
-    },
-  ]);
-
+  const [reservations, setReservations] = useState([]);
   const [expandedId, setExpandedId] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const restaurantId = localStorage.getItem("restaurantId");
+  const userId = localStorage.getItem("userId");
 
   const toggleExpand = (id) => {
-    setExpandedId((prevId) => (prevId === id ? null : id));
+    setExpandedId((prev) => (prev === id ? null : id));
   };
 
-  const today = new Date().toISOString().split("T")[0];
+  const formatDateTime = (isoString) => {
+    const date = new Date(isoString);
+    return {
+      date: date.toLocaleDateString(),
+      time: date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    };
+  };
 
-  const filteredReservations = reservations.filter(
-    (reservation) =>
-      reservation.status.toLowerCase() === "approved" &&
-      reservation.date === today
-  );
+ const fetchReservations = async () => {
+  if (!restaurantId) {
+    setError("Restaurant ID not found.");
+    setLoading(false);
+    return;
+  }
 
-  const markAsCompleted = (id) => {
-    setReservations((prev) =>
-      prev.map((res) =>
-        res.id === id ? { ...res, status: "Completed" } : res
-      )
+  try {
+    const response = await axios.get(
+      `http://localhost:5000/api/reservations-rest-today?restaurantId=${restaurantId}`
     );
-    setExpandedId(null);
+
+    if (response.data.success) {
+      setReservations(response.data.data);
+      setError(null); // Clear any previous error
+    } else {
+      setError(response.data.message || "Failed to fetch reservations.");
+    }
+  } catch (err) {
+    if (err.response) {
+      if (err.response.status === 404) {
+        setError("No reservations found for today.");
+      } else {
+        setError(`Error ${err.response.status}: ${err.response.data.message || "Unexpected error."}`);
+      }
+    } else {
+      setError("Network error or server is unreachable.");
+    }
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+  const markAsCompleted = async (reservationId) => {
+    try {
+      if (!userId) {
+        alert("User ID not found.");
+        return;
+      }
+
+      const response = await axios.post("http://localhost:5000/api/reservations/complete", {
+        reservationId,
+        userId,
+      });
+
+      if (response.data.success) {
+        setReservations((prev) =>
+          prev.map((res) =>
+            res.ReservationID === reservationId ? { ...res, Status: "Completed" } : res
+          )
+        );
+        setExpandedId(null);
+        await fetchReservations();
+      } else {
+        alert("Failed to complete reservation: " + response.data.message);
+      }
+    } catch (err) {
+      alert("Error completing reservation: " + err.message);
+    }
   };
+
+  useEffect(() => {
+    fetchReservations();
+  }, [restaurantId]);
 
   return (
     <div className="h-screen">
       <div className="text-4xl text-theme-pink p-7 font-bold border-b">
         Reservations
       </div>
+
       <div className="h-full bg-gray-50 p-6 flex flex-col items-start text-theme-brown">
-        {/* Navigation Buttons */}
+        {/* Navigation */}
         <div className="w-full max-w-6xl mb-6 flex space-x-4">
           <Link
             to="/staff/reservations"
@@ -77,48 +112,53 @@ const UpcomingReservations = () => {
           </Link>
         </div>
 
-        {/* Heading */}
         <div className="w-full max-w-6xl mb-4 mt-6">
           <h2 className="text-xl font-bold text-theme-pink mb-4">
             Approved Reservations for Today
           </h2>
         </div>
 
-        {/* Reservations List */}
-        <div className="w-full max-w-6xl">
-          <div className="space-y-6">
-            {filteredReservations.length === 0 ? (
+        {/* Loading and Error Handling */}
+        {loading ? (
+          <div className="text-gray-600">Loading reservations...</div>
+        ) : error ? (
+          <div className="text-red-600">{error}</div>
+        ) : (
+          <div className="w-full max-w-6xl space-y-6">
+            {reservations.length === 0 ? (
               <div className="text-gray-600">No approved reservations today.</div>
             ) : (
-              filteredReservations.map((reservation) => (
+              reservations.map((res) => (
                 <div
-                  onClick={() => toggleExpand(reservation.id)}
-                  key={reservation.id}
+                  key={res.ReservationID}
+                  onClick={() => toggleExpand(res.ReservationID)}
                   className="bg-white border border-gray-300 rounded-lg shadow-md p-6"
                 >
                   <div className="grid grid-cols-6 gap-4 items-center">
-                    <h3 className="text-lg font-bold text-gray-800 col-span-1 flex items-center justify-center">
-                      {reservation.restaurant}
+                    <h3 className="text-lg font-bold text-gray-800 col-span-1 text-center">
+                      {res.RestaurantName}
                     </h3>
-                    <p className="text-sm text-gray-600 col-span-1 flex items-center justify-center">
-                      {reservation.user}
+                    <p className="text-sm text-gray-600 col-span-1 text-center">{res.UserName}</p>
+                    <p className="text-sm text-gray-600 col-span-1 text-center">
+                      {formatDateTime(res.ReservationTime).date}
                     </p>
-                    <p className="text-sm text-gray-600 col-span-1 flex items-center justify-center">
-                      {reservation.date}
+                    <p className="text-sm text-gray-600 col-span-1 text-center">
+                      {formatDateTime(res.ReservationTime).time}
                     </p>
-                    <p className="text-sm text-gray-600 col-span-1 flex items-center justify-center">
-                      {reservation.time}
-                    </p>
-                    <p className="text-sm text-gray-600 col-span-1 flex items-center justify-center">
-                      Party: {reservation.people}
+                    <p className="text-sm text-gray-600 col-span-1 text-center">
+                      Party: {res.People}
                     </p>
                     <div className="col-span-1 grid grid-cols-2 items-center gap-1">
-                      <p className="text-sm font-semibold text-center text-green-600">
-                        {reservation.status}
+                      <p
+                        className={`text-sm font-semibold text-center ${
+                          res.Status === "Completed" ? "text-gray-500" : "text-green-600"
+                        }`}
+                      >
+                        {res.Status}
                       </p>
                       <button
                         className={`transition-transform duration-300 text-gray-600 hover:text-gray-800 justify-self-end ${
-                          expandedId === reservation.id ? "rotate-180" : "rotate-0"
+                          expandedId === res.ReservationID ? "rotate-180" : "rotate-0"
                         }`}
                       >
                         ▼
@@ -126,20 +166,26 @@ const UpcomingReservations = () => {
                     </div>
                   </div>
 
-                  {/* Expandable Panel */}
+                  {/* Expandable Content */}
                   <div
                     className={`transition-all duration-500 overflow-hidden ${
-                      expandedId === reservation.id
-                        ? "max-h-40 opacity-100 mt-4"
-                        : "max-h-0 opacity-0"
+                      expandedId === res.ReservationID ? "max-h-40 opacity-100 mt-4" : "max-h-0 opacity-0"
                     }`}
                   >
-                    <div className="flex flex-row items-center justify-end gap-4">
+                    <div className="flex flex-row justify-end gap-4">
                       <button
-                        onClick={() => markAsCompleted(reservation.id)}
-                        className="w-1/6 py-3 px-4 bg-theme-pink text-white text-sm font-semibold rounded hover:bg-pink-600 transition duration-200"
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent toggling expansion when clicking button
+                          markAsCompleted(res.ReservationID);
+                        }}
+                        disabled={res.Status === "Completed"}
+                        className={`w-1/6 py-3 px-4 text-sm font-semibold rounded transition duration-200 ${
+                          res.Status === "Completed"
+                            ? "bg-gray-400 cursor-not-allowed text-white"
+                            : "bg-theme-pink hover:bg-pink-600 text-white"
+                        }`}
                       >
-                        Mark as Completed
+                        {res.Status === "Completed" ? "Completed" : "Mark as Completed"}
                       </button>
                     </div>
                   </div>
@@ -147,7 +193,7 @@ const UpcomingReservations = () => {
               ))
             )}
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

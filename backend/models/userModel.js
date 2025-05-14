@@ -123,9 +123,10 @@ const UserModel = {
       const result = await pool.request()
         .input('Username', sql.NVarChar, username)
         .input('Password', sql.NVarChar, password)
+        .output('RestaurantID',sql.Int)
         .execute('AuthenticateUser');
 
-      return result.recordset[0];
+      return {data:result.recordset[0],id:result.output.RestaurantID};
     } catch (error) {
       throw new Error(error.message);
     }
@@ -196,6 +197,22 @@ const UserModel = {
           FROM Restaurants
           JOIN RestaurantAdmins ON Restaurants.RestaurantID = RestaurantAdmins.RestaurantID
           WHERE RestaurantAdmins.UserID = @Userid;
+        `);
+
+      return result.recordset;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  },
+
+  //get a staff restaurant
+  getStaffRestaurant: async (userId) => {
+    try {
+      const pool = await poolPromise;
+      const result = await pool.request()
+        .input('UserID', sql.Int, userId)
+        .query(`
+          SELECT * FROM RestaurantStaff WHERE UserID=@UserID;
         `);
 
       return result.recordset;

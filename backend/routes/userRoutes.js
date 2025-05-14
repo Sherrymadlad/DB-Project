@@ -18,5 +18,6 @@ router.post('/users/change-password', userController.changePassword);
 router.get('/users/:id/reservations', userController.getUserReservations);
 router.get('/users/:id/reviews', userController.getUserReviews);
 router.get('/users/:id/restaurants', userController.getMyRestaurants);
+router.get('/users/:id/get-Res',userController.getStaffRestaurant);
 
 module.exports = router;

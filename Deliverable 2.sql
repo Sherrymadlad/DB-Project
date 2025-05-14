@@ -159,19 +159,44 @@ GO
 --Authenticate User
 CREATE OR ALTER PROCEDURE AuthenticateUser
     @Username NVARCHAR(20),
-    @Password NVARCHAR(16)
+    @Password NVARCHAR(16),
+    @RestaurantID INT OUTPUT
 AS
 BEGIN
-    IF EXISTS (SELECT 1
-    FROM Users
-    WHERE Username = @Username AND Password = @Password)
-        SELECT *
-    from Users
-    where Username = @Username;
+    SET NOCOUNT ON;
+
+    DECLARE @Role NVARCHAR(20);
+	DECLARE @UserID INT
+
+    IF EXISTS (
+        SELECT 1
+        FROM Users
+        WHERE Username = @Username AND Password = @Password
+    )
+    BEGIN
+        -- Get user role
+        SELECT @Role = Role, @UserID=UserID FROM Users WHERE Username = @Username;
+
+        -- If user is staff, get and return RestaurantID
+        IF @Role = 'Staff'
+        BEGIN
+            SELECT @RestaurantID = RestaurantID FROM RestaurantStaff WHERE UserID = @UserID;
+        END
+        ELSE
+        BEGIN
+            SET @RestaurantID = NULL;
+        END
+		SELECT *
+        FROM Users
+        WHERE Username = @Username;
+    END
     ELSE
+    BEGIN
         RAISERROR ('Invalid Username or Password.', 16, 1);
+    END
 END;
 GO
+
 
 --Change Password
 CREATE OR ALTER PROCEDURE ChangePassword
@@ -403,6 +428,11 @@ BEGIN
 END;
 GO
 
+--Get staff's restaurants
+SELECT * 
+FROM RestaurantStaff
+WHERE UserID=@UserID;
+GO
 
 --Restaurants
 
@@ -1838,10 +1868,12 @@ BEGIN
         R.Time AS ReservationTime,
         R.Status,
         R.People AS NumGuests,
-        R.Request AS SpecialRequest
+        R.Request AS SpecialRequest,
+		Res.Name AS RestaurantName
     FROM Reservations R
         JOIN Users U ON R.UserID = U.UserID
         JOIN Tables T ON R.TableID = T.TableID
+		JOIN Restaurants Res ON T.RestaurantID=Res.RestaurantID
     WHERE 
         T.RestaurantID = @RestaurantID
         AND (@SearchTerm IS NULL OR U.Name LIKE '%' + @SearchTerm + '%')
@@ -1865,10 +1897,13 @@ BEGIN
         U.Name AS UserName,
         T.RestaurantID,
         R.Time AS ReservationTime,
-        R.Status
+        R.Status,
+		Res.Name AS RestaurantName,
+		T.Capacity AS People
     FROM Reservations R
         JOIN Users U ON R.UserID = U.UserID
         JOIN Tables T ON R.TableID = T.TableID
+		JOIN Restaurants Res ON T.RestaurantID=Res.RestaurantID
     WHERE T.RestaurantID = @RestaurantID
         AND R.Status = 'Approved'
         AND CAST(R.Time AS DATE) = CAST(GETDATE() AS DATE)

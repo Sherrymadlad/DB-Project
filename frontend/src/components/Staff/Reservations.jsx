@@ -1,197 +1,259 @@
-import React, { useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
+import axios from "axios";
 
 const Reservations = () => {
-  const [reservations, setReservations] = useState([
-    {
-      id: 1,
-      restaurant: "The Spice Route",
-      date: "2025-05-10",
-      time: "7:00 PM",
-      people: 4,
-      status: "Approved",
-      user: "Ali Khan",
-    },
-    {
-      id: 2,
-      restaurant: "Cafe Mocha",
-      date: "2025-05-12",
-      time: "1:30 PM",
-      people: 2,
-      status: "Pending",
-      user: "Sara Ahmed",
-    },
-    {
-      id: 3,
-      restaurant: "Sushi World",
-      date: "2025-05-15",
-      time: "8:00 PM",
-      people: 3,
-      status: "Approved",
-      user: "Usman Raza",
-    },
-  ]);  
+  const restaurantId=localStorage.getItem("restaurantId");
+  const [reservations, setReservations] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const [expandedId, setExpandedId] = useState(null);
   const [filterOption, setFilterOption] = useState("all");
   const [sortOption, setSortOption] = useState("time-asc");
+  const userId = localStorage.getItem("userId");
 
-  const toggleExpand = (id) => {
-    setExpandedId((prevId) => (prevId === id ? null : id));
+  useEffect(() => {
+    // If restaurantId is missing, alert and redirect or show fallback
+    if (!restaurantId) {
+      setError("Missing restaurant ID. Please log in or select a restaurant.");
+      setLoading(false);
+      return;
+    }
+
+    // Save to localStorage for persistence
+    localStorage.setItem("restaurantId", restaurantId);
+
+    const fetchReservations = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get("http://localhost:5000/api/reservations-rest", {
+          params: {
+            restaurantId,
+            status: filterOption !== "all" ? filterOption : undefined,
+          },
+        });
+
+        if (response.data.success) {
+          setReservations(response.data.data);
+          setError(null);
+        } else {
+          setReservations([]);
+          setError("No reservations found.");
+        }
+      } catch (err) {
+        console.error(err);
+        setReservations([]);
+        setError(
+          err.response?.status === 404
+            ? "No reservations found."
+            : "Failed to fetch reservations."
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchReservations();
+  }, [filterOption, restaurantId]);
+
+  const handleFilterChange = (e) => setFilterOption(e.target.value);
+  const handleSortChange = (e) => setSortOption(e.target.value);
+  const toggleExpand = (id) => setExpandedId((prev) => (prev === id ? null : id));
+
+  const handleClick = async (reservationId) => {
+    try {
+      const res = await axios.post("http://localhost:5000/api/reservations/approve", {
+        reservationId,
+        userId,
+      });
+
+      if (res.data.success) {
+        setReservations((prev) =>
+          prev.map((r) =>
+            r.ReservationID === reservationId ? { ...r, Status: "Approved" } : r
+          )
+        );
+      } else {
+        alert("Failed to approve reservation.");
+      }
+    } catch (err) {
+      console.error("Approval error:", err);
+      alert("Error approving reservation.");
+    }
   };
 
-  const handleFilterChange = (e) => {
-    setFilterOption(e.target.value);
+  const handleCancel = async (reservationId) => {
+    try {
+      const res = await axios.delete("http://localhost:5000/api/reservations", {
+        data: { reservationId, userId },
+      });
+
+      if (res.data.success) {
+        setReservations((prev) =>
+          prev.map((r) =>
+            r.ReservationID === reservationId ? { ...r, Status: "Cancelled" } : r
+          )
+        );
+      } else {
+        alert("Failed to cancel reservation.");
+      }
+    } catch (err) {
+      console.error("Cancellation error:", err);
+      alert("Error cancelling reservation.");
+    }
   };
 
-  const handleSortChange = (e) => {
-    setSortOption(e.target.value);
+  const sortedReservations = useMemo(() => {
+    return [...reservations].sort((a, b) => {
+      const dateA = new Date(a.ReservationTime);
+      const dateB = new Date(b.ReservationTime);
+      return sortOption === "time-asc" ? dateA - dateB : dateB - dateA;
+    });
+  }, [reservations, sortOption]);
+
+  const formatDateTime = (isoString) => {
+    const dateObj = new Date(isoString);
+    return {
+      date: dateObj.toLocaleDateString(),
+      time: dateObj.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    };
   };
-
-  const filteredReservations = reservations.filter((reservation) => {
-    if (filterOption === "all") return true;
-    return reservation.status.toLowerCase() === filterOption;
-  });
-
-  const sortedReservations = [...filteredReservations].sort((a, b) => {
-    const dateA = new Date(`${a.date} ${a.time}`);
-    const dateB = new Date(`${b.date} ${b.time}`);
-    return sortOption === "time-asc" ? dateA - dateB : dateB - dateA;
-  });
 
   return (
     <div className="h-screen">
-      <div className="text-4xl text-theme-pink p-7 font-bold border-b">
-        Reservations
-      </div>
+      <div className="text-4xl text-theme-pink p-7 font-bold border-b">Reservations</div>
+
       <div className="h-full bg-gray-50 p-6 flex flex-col items-start text-theme-brown">
-      
-        {/* Navigation Buttons */}
+        {/* Navigation */}
         <div className="w-full max-w-6xl mb-6 flex space-x-4">
-          <Link to="/staff/reservations" className="py-2 px-5 bg-theme-pink text-white text-base font-semibold rounded">
+          <Link to="/staff/reservations" className="py-2 px-5 bg-theme-pink text-white font-semibold rounded">
             All Reservations
           </Link>
-          <Link to="/staff/reservations/upcoming" className="py-2 px-5 bg-gray-300 text-gray-800 text-base font-semibold rounded hover:bg-gray-400 transition duration-200">
+          <Link to="/staff/reservations/upcoming" className="py-2 px-5 bg-gray-300 text-gray-800 font-semibold rounded hover:bg-gray-400">
             Upcoming Reservations
           </Link>
         </div>
 
-        {/* Heading and Controls */}
+        {/* Controls */}
         <div className="w-full max-w-6xl mb-4 mt-6">
           <h2 className="text-xl font-bold text-theme-pink mb-4">Your Current Reservations</h2>
           <div className="flex justify-between items-center">
-            {/* Filter Dropdown */}
             <div className="flex flex-col gap-1">
-                <div className="text-gray-500 text-sm">Filter By</div>
-                <select
+              <label className="text-gray-500 text-sm">Filter By</label>
+              <select
                 value={filterOption}
                 onChange={handleFilterChange}
                 className="py-2 px-4 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-theme-pink"
-                >
+              >
                 <option value="all">All</option>
-                <option value="pending">Pending</option>
-                <option value="approved">Approved</option>
-                <option value="completed">Completed</option>
-                <option value="cancelled">Cancelled</option>
-                </select>
+                <option value="Pending">Pending</option>
+                <option value="Approved">Approved</option>
+                <option value="Completed">Completed</option>
+                <option value="Cancelled">Cancelled</option>
+              </select>
             </div>
 
-            {/* Sort Dropdown */}
             <div className="flex flex-col gap-1">
-                <div className="text-gray-500 text-sm">Sort By</div>
-                <select
+              <label className="text-gray-500 text-sm">Sort By</label>
+              <select
                 value={sortOption}
                 onChange={handleSortChange}
                 className="py-2 px-4 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-theme-pink"
-                >
+              >
                 <option value="time-asc">Time Ascending</option>
                 <option value="time-desc">Time Descending</option>
-                </select>
+              </select>
             </div>
           </div>
         </div>
 
-        {/* Reservations List */}
-        <div className="w-full max-w-6xl">
-          <div className="space-y-6">
+        {/* Reservation List */}
+        {loading ? (
+          <p className="text-gray-500 p-4">Loading reservations...</p>
+        ) : error ? (
+          <p className="text-red-500 p-4">{error}</p>
+        ) : sortedReservations.length === 0 ? (
+          <p className="text-gray-500 p-4">No reservations to display.</p>
+        ) : (
+          <div className="w-full max-w-6xl space-y-6">
             {sortedReservations.map((reservation) => (
               <div
-              onClick={() => toggleExpand(reservation.id)}
-              key={reservation.id}
-              className="bg-white border border-gray-300 rounded-lg shadow-md p-6"
-            >
-              <div className="grid grid-cols-6 gap-4 items-center">
-                {/* Restaurant Name */}
-                <h3 className="text-lg font-bold text-gray-800 col-span-1 flex items-center justify-center">
-                  {reservation.restaurant}
-                </h3>
+                key={reservation.ReservationID}
+                onClick={() => toggleExpand(reservation.ReservationID)}
+                className="bg-white border border-gray-300 rounded-lg shadow-md p-6 cursor-pointer"
+              >
+                <div className="grid grid-cols-6 gap-4 items-center">
+                  <h3 className="text-lg font-bold text-gray-800 col-span-1 text-center">
+                    {reservation.RestaurantName}
+                  </h3>
+                  <p className="text-sm text-gray-600 col-span-1 text-center">{reservation.UserName}</p>
+                  <p className="text-sm text-gray-600 col-span-1 text-center">{formatDateTime(reservation.ReservationTime).date}</p>
+                  <p className="text-sm text-gray-600 col-span-1 text-center">{formatDateTime(reservation.ReservationTime).time}</p>
+                  <p className="text-sm text-gray-600 col-span-1 text-center">Party: {reservation.NumGuests}</p>
 
-                {/* User Name */}
-                <p className="text-sm text-gray-600 col-span-1 flex items-center justify-center">
-                  {reservation.user}
-                </p>
-
-                {/* Date and Time */}
-                <p className="text-sm text-gray-600 col-span-1 flex items-center justify-center">
-                  {reservation.date}
-                </p>
-
-                <p className="text-sm text-gray-600 col-span-1 flex items-center justify-center">
-                  {reservation.time}
-                </p>
-
-
-                {/* Party Size */}
-                <p className="text-sm text-gray-600 col-span-1 flex items-center justify-center">
-                  Party: {reservation.people}
-                </p>
-
-                {/* Status + Expand Button */}
-                <div className="col-span-1 grid grid-cols-2 items-center gap-1">
-                  <p
-                    className={`text-sm font-semibold text-center ${
-                      reservation.status === "Approved"
+                  <div className="col-span-1 grid grid-cols-2 items-center gap-1">
+                    <p className={`text-sm font-semibold text-center ${
+                      reservation.Status === "Approved"
                         ? "text-green-600"
-                        : reservation.status === "Completed"
+                        : reservation.Status === "Completed"
                         ? "text-theme-pink"
-                        : reservation.status === "Cancelled"
+                        : reservation.Status === "Cancelled"
                         ? "text-red-600"
                         : "text-yellow-600"
-                    }`}
-                  >
-                    {reservation.status}
-                  </p>
+                    }`}>{reservation.Status}</p>
+                    <button
+                      className={`transition-transform duration-300 text-gray-600 hover:text-gray-800 justify-self-end ${
+                        expandedId === reservation.ReservationID ? "rotate-180" : "rotate-0"
+                      }`}
+                    >
+                      ▼
+                    </button>
+                  </div>
+                </div>
 
-                  <button
-                    className={`transition-transform duration-300 text-gray-600 hover:text-gray-800 justify-self-end ${
-                      expandedId === reservation.id ? "rotate-180" : "rotate-0"
-                    }`}
-                  >
-                    ▼
-                  </button>
+                {/* Expandable Content */}
+                <div
+                  className={`transition-all duration-500 overflow-hidden ${
+                    expandedId === reservation.ReservationID ? "max-h-40 opacity-100 mt-4" : "max-h-0 opacity-0"
+                  }`}
+                >
+                  <div className="flex w-full justify-between">
+                    <p className="flex justify-center items-center gap-1">
+                      <strong>Special Request:</strong>{" "}
+                      {reservation.Request || "None"}
+                    </p>
+                    {reservation.Status === "Pending" && (
+                      <div className="flex w-1/2 flex-row items-center justify-end gap-4">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleClick(reservation.ReservationID);
+                          }}
+                          className="w-1/3 py-3 px-4 bg-theme-pink text-white text-sm font-semibold rounded hover:bg-pink-600 transition duration-200"
+                        >
+                          Accept
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCancel(reservation.ReservationID);
+                          }}
+                          className="w-1/3 py-3 px-4 bg-red-600 text-white text-sm font-semibold rounded hover:bg-red-500 transition duration-200"
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            
-              {/* Expandable Panel */}
-              <div
-                className={`transition-all duration-500 overflow-hidden ${
-                  expandedId === reservation.id ? "max-h-40 opacity-100 mt-4" : "max-h-0 opacity-0"
-                }`}
-              >
-                <div className="flex flex-row items-center justify-end gap-4">
-                  <button className="w-1/6 py-3 px-4 bg-theme-pink text-white text-sm font-semibold rounded hover:bg-pink-600 transition duration-200">
-                    Accept
-                  </button>
-                  <button className="w-1/6 py-3 px-4 bg-red-500 text-white text-sm font-semibold rounded hover:bg-red-600 transition duration-200">
-                    Reject
-                  </button>
-                </div>
-              </div>
-            </div>
-            
             ))}
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

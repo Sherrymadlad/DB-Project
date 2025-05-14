@@ -96,3 +96,12 @@ exports.getMyRestaurants = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+exports.getStaffRestaurant = async (req, res) => {
+  try {
+    const result = await UserModel.getStaffRestaurant(req.params.id);
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
