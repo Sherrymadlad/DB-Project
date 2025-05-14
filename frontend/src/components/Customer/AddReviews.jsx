@@ -1,48 +1,74 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
+import {
+  MagnifyingGlassIcon,
+  ArrowPathIcon,
+} from "@heroicons/react/24/outline";
 import axios from "axios";
 import defaultRestaurantPic from "../../assets/default-restaurant.png";
 
 const AddReviews = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [restaurants, setRestaurants] = useState([]);
-  const [ratings, setRatings] = useState({}); // To store average ratings for each restaurant
+  const [ratings, setRatings] = useState({});
+  const [imageURLs, setImageURLs] = useState({});
+  const [isLoading, setIsLoading] = useState(true);
+
   const navigate = useNavigate();
 
-  // Fetch restaurants and their average ratings on component mount
   useEffect(() => {
     const fetchRestaurants = async () => {
       try {
+        setIsLoading(true);
         const response = await axios.get(
           "http://localhost:5000/api/restaurants"
         );
         const restaurantData = response.data.data;
         setRestaurants(restaurantData);
 
-        // Fetch average rating for each restaurant
+        // Initialize image and rating data
         const ratingsData = {};
+        const imageURLMap = {};
+
         for (let restaurant of restaurantData) {
+          // Fetch average rating
           const ratingResponse = await axios.get(
             `http://localhost:5000/api/stats/${restaurant.RestaurantID}`
           );
           ratingsData[restaurant.RestaurantID] =
             ratingResponse.data.data.averageRating;
+
+          // Convert profilePic binary to Blob URL if exists
+          if (restaurant.ProfilePic && restaurant.ProfilePic.data) {
+            const byteArray = new Uint8Array(restaurant.ProfilePic.data);
+            const blob = new Blob([byteArray], { type: "image/jpeg" });
+            const imageURL = URL.createObjectURL(blob);
+            imageURLMap[restaurant.RestaurantID] = imageURL;
+          }
         }
+
         setRatings(ratingsData);
+        setImageURLs(imageURLMap);
       } catch (error) {
         console.error("Error fetching restaurants or ratings:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
     fetchRestaurants();
   }, []);
 
+  useEffect(() => {
+    return () => {
+      Object.values(imageURLs).forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [imageURLs]);
+
   const handleSearchChange = (e) => setSearchQuery(e.target.value);
 
   const handleRestaurantClick = (restaurantId) => {
     // Store the RestaurantID directly in localStorage
-    console.log("Saved restaurantId to LS:", restaurantId);
     localStorage.setItem("restaurantId", restaurantId);
 
     // Redirect to restaurant reviews page
@@ -50,20 +76,20 @@ const AddReviews = () => {
   };
 
   const RestaurantCard = ({ restaurant, index }) => {
-    const averageRating = ratings[restaurant.RestaurantID]; // Get the average rating for this restaurant
-    const profilePic = restaurant.profilePic || defaultRestaurantPic; // Default image if profilePic is null
+    const averageRating = ratings[restaurant.RestaurantID];
+    const imageUrl = imageURLs[restaurant.RestaurantID] || defaultRestaurantPic;
     return (
       <div
         onClick={() => handleRestaurantClick(restaurant.RestaurantID)}
         className="p-4 bg-white border border-gray-300 rounded-xl shadow-lg hover:shadow-xl transition duration-300 flex items-center cursor-pointer"
       >
         {/* Image */}
-        <div className="w-32 h-32 bg-gray-200 rounded-full flex items-center justify-center mr-6">
+        <div className="w-32 h-32 bg-gray-200 rounded-full flex items-center justify-center mr-6 overflow-hidden">
           <img
-            src={profilePic}
+            src={imageUrl}
             alt={restaurant.Name}
-            className={`object-cover rounded-full${
-              profilePic === defaultRestaurantPic
+            className={`object-cover ${
+              imageUrl === defaultRestaurantPic
                 ? "w-[90%] h-[90%]"
                 : "w-full h-full"
             }`}
@@ -75,13 +101,20 @@ const AddReviews = () => {
           <div className="mt-2 flex items-center space-x-2">
             <span className="text-yellow-500 text-lg">⭐</span>
             <span className="text-md font-semibold text-gray-800">
-              {averageRating ? averageRating.toFixed(1) : "No rating yet"}
+              {averageRating ? averageRating.toFixed(1) : "0.0"}
             </span>
           </div>
         </div>
       </div>
     );
   };
+
+  if (isLoading)
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <ArrowPathIcon className="h-5 w-5 animate-spin text-theme-pink" />
+      </div>
+    );
 
   return (
     <div className="h-screen">

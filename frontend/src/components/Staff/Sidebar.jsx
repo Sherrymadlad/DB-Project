@@ -1,20 +1,33 @@
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   CalendarDaysIcon,
   UserGroupIcon,
   UserCircleIcon,
   ArrowRightStartOnRectangleIcon,
-} from '@heroicons/react/24/outline';
-import Logo from '../../assets/Logo.png';
+} from "@heroicons/react/24/outline";
+import Logo from "../../assets/Logo.png";
 
 const StaffSidebar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
 
   const tabs = [
-    { name: 'Reservations', icon: <CalendarDaysIcon className="h-5 w-5" />, path: '/staff/reservations' },
-    { name: 'Tables', icon: <UserGroupIcon className="h-5 w-5" />, path: '/staff/tables' },
-    { name: 'Profile', icon: <UserCircleIcon className="h-5 w-5" />, path: '/staff/profile' },
+    {
+      name: "Reservations",
+      icon: <CalendarDaysIcon className="h-5 w-5" />,
+      path: "/staff/reservations",
+    },
+    {
+      name: "Tables",
+      icon: <UserGroupIcon className="h-5 w-5" />,
+      path: "/staff/tables",
+    },
+    {
+      name: "Profile",
+      icon: <UserCircleIcon className="h-5 w-5" />,
+      path: "/staff/profile",
+    },
   ];
 
   return (
@@ -22,7 +35,11 @@ const StaffSidebar = () => {
       {/* Logo */}
       <div>
         <div className="border-b p-2 border-theme-pink">
-          <img src={Logo} alt="Logo" className="w-full mx-auto object-contain" />
+          <img
+            src={Logo}
+            alt="Logo"
+            className="w-full mx-auto object-contain"
+          />
         </div>
 
         {/* Navigation */}
@@ -32,7 +49,9 @@ const StaffSidebar = () => {
               key={tab.name}
               to={tab.path}
               className={`shadow flex items-center gap-3 px-3 py-2 rounded-md text-theme-brown text-xl hover:bg-theme-pink hover:text-white transition ${
-                location.pathname.startsWith(tab.path) ? 'bg-theme-pink text-white' : ''
+                location.pathname.startsWith(tab.path)
+                  ? "bg-theme-pink text-white"
+                  : ""
               }`}
             >
               {tab.icon}
@@ -47,7 +66,8 @@ const StaffSidebar = () => {
         {/* Logout */}
         <button
           onClick={() => {
-            // Add your logout logic here
+            localStorage.clear();
+            navigate("/");
           }}
           className="flex items-center gap-2 text-red-500 hover:text-red-600 text-xl transition w-full"
         >

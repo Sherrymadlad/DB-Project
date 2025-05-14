@@ -1,214 +1,452 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import defaultProfilePic from "../../assets/default-profile-pic.jpg";
+import { ArrowPathIcon } from "@heroicons/react/24/solid";
+import { useNavigate } from "react-router-dom";
+
+const DeleteAccountModal = ({ isOpen, onClose, onConfirm }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm text-theme-brown">
+      <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md mx-4">
+        <h2 className="text-xl font-semibold mb-4">
+          Are you sure you want to delete your account?
+        </h2>
+        <p className="text-sm mb-6">
+          This action cannot be undone. Your data will be permanently removed.
+        </p>
+        <div className="flex justify-end space-x-3">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-100 transition"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition"
+          >
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const Profile = () => {
-  const dummyData = {
-    profilePic: '../../assets/Logo.png',
-    name: 'Ali Khan',
-    username: 'alikhan123',
-    password: '',
-    phone: '+92 300 1234567',
-    email: 'ali@example.com'
-  };
-
-  const [user, setUser] = useState(dummyData);
-  const [formData, setFormData] = useState(dummyData);
+  const navigate = useNavigate();
+  const [user, setUser] = useState(null);
+  const [formData, setFormData] = useState(null);
   const [editMode, setEditMode] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [oldPassword, setOldPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const [showPasswords, setShowPasswords] = useState({
     current: false,
     old: false,
     new: false,
   });
+  const userId = localStorage.getItem("userId");
+  const [imageUrl, setImageUrl] = useState(null);
+  const [errors, setErrors] = useState({
+    Name: "",
+    Username: "",
+    PhoneNum: "",
+    Email: "",
+    password: "",
+  });
+  const [preview, setPreview] = useState(null);
+  const [isModalOpen, setModalOpen] = useState(false);
 
-  const togglePasswordVisibility = (field) => {
-    setShowPasswords(prev => ({ ...prev, [field]: !prev[field] }));
-  };
+  const fetchUserDetails = async () => {
+    setLoading(true);
+    setPreview(null);
 
-  const handleProfilePicChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      setFormData(prev => ({ ...prev, profilePic: imageUrl }));
-    }
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleUpdate = async () => {
     try {
-      setLoading(true);
-      const updatedPayload = {
-        ...formData,
-        oldPassword: oldPassword || undefined,
-        newPassword: newPassword || undefined,
-      };
+      const res = await axios.get(`http://localhost:5000/api/users/${userId}`);
 
-      await axios.put('/api/user/update-profile', updatedPayload); // Replace with actual endpoint
+      const { ProfilePic, ...baseUser } = res.data;
 
-      // Assume backend updates the password if newPassword is valid
-      if (newPassword) {
-        formData.password = newPassword;
+      setUser(baseUser);
+      setFormData(baseUser);
+
+      // Handle ProfilePic
+      const buffer = ProfilePic;
+      if (buffer?.data) {
+        const byteArray = new Uint8Array(buffer.data);
+        const blob = new Blob([byteArray], { type: "image/jpeg" });
+        const objectUrl = URL.createObjectURL(blob);
+        setImageUrl(objectUrl);
+        return () => URL.revokeObjectURL(objectUrl);
       }
-
-      setUser(formData);
-      setEditMode(false);
-      setOldPassword('');
-      setNewPassword('');
-      alert('Profile updated!');
     } catch (err) {
-      console.error(err);
-      alert('Failed to update profile.');
+      console.error("Fetch error:", err);
+      if (err.response?.data?.message) {
+        setErrors(err.response.data.message);
+      } else {
+        setErrors("Failed to get details.");
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDeleteAccount = async () => {
-    if (!window.confirm('Are you sure you want to delete your account?')) return;
-    try {
-      await axios.delete('/api/user/delete-account'); // Replace with actual endpoint
-      alert('Account deleted.');
-    } catch (err) {
-      console.error(err);
-      alert('Failed to delete account.');
+  useEffect(() => {
+    if (userId) {
+      fetchUserDetails();
+    }
+  }, [userId]);
+
+  const handleChange = (e) => {
+    const { name, value, files } = e.target;
+    if (name === "profilePic") {
+      const file = files[0];
+      setFormData({ ...formData, profilePic: file });
+      if (file) {
+        const reader = new FileReader();
+        reader.onloadend = () => setPreview(reader.result);
+        reader.readAsDataURL(file);
+      }
+    } else {
+      setFormData({ ...formData, [name]: value });
     }
   };
 
-  return (
-    <div className="h-screen flex flex-col">
-      <div className="text-4xl text-theme-pink p-7 font-bold border-b">
-        Profile Information
+  const handleUpdate = async () => {
+    setLoading(true);
+    setErrors({
+      Name: "",
+      Username: "",
+      PhoneNum: "",
+      Email: "",
+      password: "",
+    });
+
+    const { Name, Username, Email, PhoneNum, profilePic } = formData;
+
+    // === FRONTEND VALIDATION ===
+    const newErrors = {
+      Name: Name.trim() === "" ? "Name is required." : "",
+      Username: Username.trim() === "" ? "Username is required." : "",
+      Email:
+        Email.trim() === ""
+          ? "Email is required."
+          : !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(Email)
+          ? "Invalid email format."
+          : "",
+      PhoneNum:
+        PhoneNum.trim() === ""
+          ? "Phone number is required."
+          : !/^\d{10,15}$/.test(PhoneNum)
+          ? "Phone number must be 10 to 15 digits."
+          : "",
+      password: "",
+    };
+
+    if (oldPassword || newPassword) {
+      if (!oldPassword)
+        newErrors.password = "Old and New password is required.";
+      else if (newPassword.length < 6)
+        newErrors.password = "New password must be at least 6 characters.";
+    }
+
+    const hasValidationErrors = Object.values(newErrors).some((e) => e);
+    if (hasValidationErrors) {
+      setErrors(newErrors);
+      setLoading(false);
+      return;
+    }
+
+    // === BACKEND CALLS ===
+    try {
+      // 1. Update user info
+      try {
+        const formDataToSend = new FormData();
+        formDataToSend.append("name", Name);
+        formDataToSend.append("username", Username);
+        formDataToSend.append("email", Email);
+        formDataToSend.append("phoneNum", PhoneNum);
+
+        if (profilePic instanceof File) {
+          formDataToSend.append("profilePic", profilePic);
+        }
+        await axios.put(
+          `http://localhost:5000/api/users/${userId}`,
+          formDataToSend,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
+      } catch (err) {
+        const rawMessage =
+          err.response?.data?.error || "Failed to update user info.";
+
+        const fieldErrors = {};
+
+        if (rawMessage.includes("Username")) {
+          fieldErrors["Username"] = "Username already exists.";
+        }
+        if (rawMessage.includes("Email")) {
+          fieldErrors["Email"] = "Email already exists.";
+        }
+        if (rawMessage.includes("Phone")) {
+          fieldErrors["PhoneNum"] = "Phone number already exists.";
+        }
+        if (rawMessage.includes("User not found")) {
+          fieldErrors["Name"] = "User not found.";
+        }
+
+        const hasFieldErrors = Object.keys(fieldErrors).length > 0;
+
+        if (hasFieldErrors) {
+          setErrors((prev) => ({
+            ...prev,
+            ...fieldErrors,
+          }));
+          // Don't throw a new error message that will override it
+          throw null;
+        } else {
+          // No specific field errors, fall back to generic
+          throw new Error("Failed to update user info.");
+        }
+      }
+
+      // 2. Update password if applicable
+      if (oldPassword && newPassword) {
+        try {
+          await axios.post("http://localhost:5000/api/users/change-password", {
+            userId,
+            oldPassword,
+            newPassword,
+          });
+        } catch (err) {
+          setErrors((prev) => ({
+            ...prev,
+            password: "Old password doesn't match.",
+          }));
+          throw new Error("Password update failed.");
+        }
+      }
+
+      // Final cleanup
+      setEditMode(false);
+      setOldPassword("");
+      setNewPassword("");
+      await fetchUserDetails();
+    } catch (err) {
+      console.error("Update Error:", err);
+      if (!err) return; // Skip if already handled field-specific errors
+
+      if (typeof err === "string" || err instanceof Error) {
+        setErrors((prev) => ({
+          ...prev,
+          Name: err.message || "An unexpected error occurred.",
+        }));
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const togglePasswordVisibility = (field) => {
+    setShowPasswords((prev) => ({ ...prev, [field]: !prev[field] }));
+  };
+
+  const handleDeleteAccount = async () => {
+    try {
+      await axios.delete(`http://localhost:5000/api/users/${userId}`);
+
+      // Clear all user-related data
+      localStorage.clear();
+
+      // Navigate to homepage
+      navigate("/");
+    } catch (err) {
+      console.error("Failed to delete account:", err);
+    }
+  };
+
+  if (!user || loading)
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <ArrowPathIcon className="h-5 w-5 animate-spin text-theme-pink" />
       </div>
-      <div className="w-full h-full mx-auto p-8 bg-white text-theme-brown space-y-10 flex flex-col gap-8">
-        <div className="flex flex-col md:flex-row gap-10">
-          <div className="flex justify-center items-center flex-col gap-4">
-            <img
-              src={formData.profilePic}
-              alt="Profile"
-              className="w-56 h-56 rounded-full object-cover border border-theme-pink"
-            />
-            {editMode && (
-              <label className="cursor-pointer bg-theme-pink text-white px-4 py-2 rounded hover:bg-pink-700 transition">
-                Change Photo
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleProfilePicChange}
-                  className="hidden"
+    );
+
+  return (
+    <>
+      <div className="h-screen flex flex-col">
+        <div className="text-4xl text-theme-pink p-7 font-bold border-b">
+          Profile Information
+        </div>
+        <div className="w-full h-full mx-auto p-8 bg-white text-theme-brown space-y-10">
+          <div className="flex flex-col md:flex-row gap-10">
+            <div className="flex justify-center items-center flex-col gap-4">
+              {preview ? (
+                <img
+                  src={preview}
+                  alt="Profile Preview"
+                  className="w-56 h-56 rounded-full object-cover border border-theme-pink"
                 />
-              </label>
-            )}
-          </div>
-
-          <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-            {['name', 'username', 'phone', 'email'].map((field) => (
-              <div key={field}>
-                <label className="text-2xl text-theme-pink capitalize">{field}</label>
-                {editMode ? (
-                  <input
-                    type="text"
-                    name={field}
-                    value={formData[field]}
-                    onChange={handleChange}
-                    className="w-full border rounded px-3 py-2"
-                  />
-                ) : (
-                  <p className="text-lg mt-1">{user[field]}</p>
-                )}
-              </div>
-            ))}
-
-            <div>
-              <label className="text-2xl text-theme-pink capitalize">{editMode? "Old Password":"Password "}</label>
-              {editMode ? (
-                <div className="relative">
-                  <input
-                    type={showPasswords.current ? 'text' : 'password'}
-                    name="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    className="w-full border rounded px-3 py-2"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => togglePasswordVisibility('current')}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm"
-                  >
-                    {showPasswords.current ? 'Hide' : 'Show'}
-                  </button>
-                </div>
               ) : (
-                <p className="text-lg mt-1">••••••••</p>
+                <img
+                  src={imageUrl || defaultProfilePic}
+                  alt="Profile"
+                  className="w-56 h-56 rounded-full object-cover border border-theme-pink"
+                />
+              )}
+              {editMode && (
+                <label className="cursor-pointer bg-theme-pink text-white px-4 py-2 rounded hover:bg-pink-700 transition">
+                  Change Photo
+                  <input
+                    name="profilePic"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleChange}
+                    className="hidden"
+                  />
+                </label>
               )}
             </div>
 
-            {editMode && (
+            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+              {["Name", "Username", "PhoneNum", "Email"].map((field) => (
+                <div key={field}>
+                  <label className="text-2xl text-theme-pink capitalize">
+                    {field}
+                  </label>
+                  {editMode ? (
+                    <>
+                      <input
+                        type="text"
+                        name={field}
+                        value={formData[field]}
+                        onChange={handleChange}
+                        className="w-full border rounded px-3 py-2"
+                      />
+                      {errors[field] && (
+                        <p className="text-red-500 text-sm mt-1">
+                          {errors[field]}
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-lg mt-1">{user[field]}</p>
+                  )}
+                </div>
+              ))}
+
+              <div>
+                <label className="text-2xl text-theme-pink capitalize">
+                  {editMode ? "Old Password" : "Password "}
+                </label>
+                {editMode ? (
+                  <>
+                    <div className="relative">
+                      <input
+                        type={showPasswords.current ? "text" : "password"}
+                        name="password"
+                        value={oldPassword}
+                        onChange={(e) => setOldPassword(e.target.value)}
+                        className="w-full border rounded px-3 py-2"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => togglePasswordVisibility("current")}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm"
+                      >
+                        {showPasswords.current ? "Hide" : "Show"}
+                      </button>
+                    </div>
+                    {errors.password && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors.password}
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-lg mt-1">••••••••</p>
+                )}
+              </div>
+
+              {editMode && (
                 <div>
-                  <label className="text-2xl text-theme-pink">New Password</label>
+                  <label className="text-2xl text-theme-pink">
+                    New Password
+                  </label>
                   <div className="relative">
                     <input
-                      type={showPasswords.new ? 'text' : 'password'}
+                      type={showPasswords.new ? "text" : "password"}
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       className="w-full border rounded px-3 py-2"
                     />
                     <button
                       type="button"
-                      onClick={() => togglePasswordVisibility('new')}
+                      onClick={() => togglePasswordVisibility("new")}
                       className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm"
                     >
-                      {showPasswords.new ? 'Hide' : 'Show'}
+                      {showPasswords.new ? "Hide" : "Show"}
                     </button>
                   </div>
                 </div>
-            )}
+              )}
+            </div>
           </div>
-        </div>
 
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-          {editMode ? (
-            <div className="flex gap-4">
-              <button
-                onClick={handleUpdate}
-                className="bg-theme-pink text-white px-5 py-2 rounded hover:bg-pink-700 transition"
-                disabled={loading}
-              >
-                {loading ? 'Updating...' : 'Update Profile'}
-              </button>
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            {editMode ? (
+              <div className="flex gap-4">
+                <button
+                  onClick={handleUpdate}
+                  className="bg-theme-pink text-white px-5 py-2 rounded hover:bg-pink-700 transition"
+                  disabled={loading}
+                >
+                  {loading ? "Updating..." : "Update Profile"}
+                </button>
+                <button
+                  onClick={() => {
+                    setEditMode(false);
+                    setOldPassword("");
+                    setNewPassword("");
+                  }}
+                  className="text-theme-brown underline"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
               <button
                 onClick={() => {
-                  setEditMode(false);
-                  setFormData(user);
-                  setOldPassword('');
-                  setNewPassword('');
+                  setEditMode(true);
                 }}
-                className="text-theme-brown underline"
+                className="bg-theme-pink text-white px-5 py-2 rounded hover:bg-pink-700 transition"
               >
-                Cancel
+                Edit Profile
               </button>
-            </div>
-          ) : (
+            )}
             <button
-              onClick={() => setEditMode(true)}
-              className="bg-theme-pink text-white px-5 py-2 rounded hover:bg-pink-700 transition"
+              onClick={() => setModalOpen(true)}
+              className="bg-red-600 text-white px-5 py-2 rounded hover:bg-red-700"
             >
-              Edit Profile
+              Delete Account
             </button>
-          )}
-          <button
-            onClick={handleDeleteAccount}
-            className="bg-red-600 text-white px-5 py-2 rounded hover:bg-red-700"
-          >
-            Delete Account
-          </button>
+          </div>
         </div>
       </div>
-    </div>
+      <DeleteAccountModal
+        isOpen={isModalOpen}
+        onClose={() => setModalOpen(false)}
+        onConfirm={() => {
+          handleDeleteAccount();
+          setModalOpen(false);
+        }}
+      />
+    </>
   );
 };
 

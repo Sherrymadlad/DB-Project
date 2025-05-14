@@ -37,11 +37,12 @@ const RestaurantController = {
     }
 
     try {
-      const response = await RestaurantModel.registerRestaurant(req.body);
+      const ProfilePic = req.file ? req.file.buffer : null;
+      const response = await RestaurantModel.registerRestaurant(req.body,ProfilePic);
       if (!response.success) {
         return res.status(400).json({ success: false, message: response.message });
       }
-      return res.status(201).json({ success: true, message: 'Restaurant registered successfully' });
+      return res.status(201).json({ success: true, message: 'Restaurant registered successfully', RestaurantID: response.RestaurantID });
     } catch (error) {
       return res.status(500).json({ success: false, message: 'Error registering restaurant', error: error.message });
     }
@@ -170,7 +171,7 @@ const RestaurantController = {
   addImage: async (req, res) => {
     const { UserID } = req.body;
     const RestaurantID = parseInt(req.params.id);
-    const Image = req.file ? req.file.buffer : null; // Assuming you're using `multer` for image upload
+    const Image = req.file ? req.file.buffer : null;
 
     if (!Image) {
       return res.status(400).json({ success: false, message: 'No image provided' });
@@ -232,9 +233,8 @@ const RestaurantController = {
 
   // Get images for a restaurant
   getRestaurantImages: async (req, res) => {
-    const { RestaurantID } = req.params;
     try {
-      const images = await RestaurantModel.getRestaurantImages(RestaurantID);
+      const images = await RestaurantModel.getRestaurantImages(req.params.id);
       return res.status(200).json({
         success: true,
         message: 'Images fetched successfully',

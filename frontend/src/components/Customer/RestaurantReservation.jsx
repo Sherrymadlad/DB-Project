@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import axios from 'axios';
+import axios from "axios";
 
 const RestaurantReservation = () => {
   const navigate = useNavigate();
@@ -10,7 +10,7 @@ const RestaurantReservation = () => {
 
   const [restaurantName, setRestaurantName] = useState("Loading...");
   const [openingHour, setOpeningHour] = useState(0);
-  const [closingHour, setClosingHour] = useState(24); 
+  const [closingHour, setClosingHour] = useState(24);
 
   const [selectedDateTime, setSelectedDateTime] = useState(null);
   const [duration, setDuration] = useState(0.5); // default to 30 minutes
@@ -25,8 +25,11 @@ const RestaurantReservation = () => {
   useEffect(() => {
     const fetchRestaurant = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/api/restaurants/${restaurantId}`);
-        const { Name, OperatingHoursStart, OperatingHoursEnd } = response.data.data;
+        const response = await axios.get(
+          `http://localhost:5000/api/restaurants/${restaurantId}`
+        );
+        const { Name, OperatingHoursStart, OperatingHoursEnd } =
+          response.data.data;
 
         setRestaurantName(Name || "Restaurant");
 
@@ -42,7 +45,7 @@ const RestaurantReservation = () => {
     };
 
     if (restaurantId) fetchRestaurant();
-  }, [restaurantId]);  
+  }, [restaurantId]);
 
   const handleNext = () => {
     const errors = {
@@ -64,9 +67,10 @@ const RestaurantReservation = () => {
       if (selectedDateTime <= now) errors.pastDate = true;
       if (selectedDateTime > tenDaysLater) errors.futureDate = true;
 
-      const isWithinOperatingHours = closingHour > openingHour
-        ? selectedHour >= openingHour && selectedHour < closingHour
-        : selectedHour >= openingHour || selectedHour < closingHour;
+      const isWithinOperatingHours =
+        closingHour > openingHour
+          ? selectedHour >= openingHour && selectedHour < closingHour
+          : selectedHour >= openingHour || selectedHour < closingHour;
 
       if (!isWithinOperatingHours) errors.outsideHours = true;
     }
@@ -84,15 +88,30 @@ const RestaurantReservation = () => {
         specialRequest: specialRequest,
       },
     });
-  }; 
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-6 relative">
       {/* Navigation Buttons */}
       <div className="fixed top-6 left--1 flex gap-4 z-10">
-        <Link className="bg-white border px-4 py-2 rounded hover:bg-gray-100" to="/customer/restaurants/details">Details</Link>
-        <Link className="bg-theme-pink text-white px-4 py-2 rounded shadow-md" to="/customer/restaurants/reserve">Reserve</Link>
-        <Link className="bg-white border px-4 py-2 rounded hover:bg-gray-100" to="/customer/restaurants/reviews">Reviews</Link>
+        <Link
+          className="bg-white border px-4 py-2 rounded hover:bg-gray-100"
+          to="/customer/restaurants/details"
+        >
+          Details
+        </Link>
+        <Link
+          className="bg-theme-pink text-white px-4 py-2 rounded shadow-md"
+          to="/customer/restaurants/reserve"
+        >
+          Reserve
+        </Link>
+        <Link
+          className="bg-white border px-4 py-2 rounded hover:bg-gray-100"
+          to="/customer/restaurants/reviews"
+        >
+          Reviews
+        </Link>
       </div>
 
       <h1 className="text-3xl font-bold text-theme-pink text-center mb-8 pt-20">
@@ -102,7 +121,9 @@ const RestaurantReservation = () => {
       <div className="h-full flex flex-col items-center justify-center p-4">
         {/* Date & Time Picker */}
         <div className="w-full max-w-md">
-          <h2 className="text-xl font-semibold text-gray-800 mb-2">Choose Date & Time</h2>
+          <h2 className="text-xl font-semibold text-gray-800 mb-2">
+            Choose Date & Time
+          </h2>
           <DatePicker
             selected={selectedDateTime}
             onChange={(date) => setSelectedDateTime(date)}
@@ -115,12 +136,19 @@ const RestaurantReservation = () => {
         </div>
         {Object.values(validationErrors).some(Boolean) && (
           <div className="text-left text-red-600 mt-2 text-sm space-y-1 w-full max-w-md">
-            {validationErrors.noDate && <div>Please select a date and time.</div>}
-            {validationErrors.pastDate && <div>The selected time must be in the future.</div>}
-            {validationErrors.futureDate && <div>The reservation must be within the next 10 days.</div>}
+            {validationErrors.noDate && (
+              <div>Please select a date and time.</div>
+            )}
+            {validationErrors.pastDate && (
+              <div>The selected time must be in the future.</div>
+            )}
+            {validationErrors.futureDate && (
+              <div>The reservation must be within the next 10 days.</div>
+            )}
             {validationErrors.outsideHours && (
               <div>
-                Please select a time between {openingHour}:00 and {closingHour}:00.
+                Please select a time between {openingHour}:00 and {closingHour}
+                :00.
               </div>
             )}
           </div>
@@ -144,7 +172,9 @@ const RestaurantReservation = () => {
 
         {/* Special Request */}
         <div className="w-full max-w-md mt-4 mb-4">
-          <h2 className="text-xl font-semibold text-gray-800 mb-2">Special Requests</h2>
+          <h2 className="text-xl font-semibold text-gray-800 mb-2">
+            Special Requests
+          </h2>
           <textarea
             className="w-full p-3 bg-white border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-theme-pink resize-none"
             rows={4}

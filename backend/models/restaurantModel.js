@@ -32,21 +32,24 @@ const RestaurantModel = {
   },
 
   // Register a new restaurant
-  registerRestaurant: async (data) => {
-    const { UserID, Name, Description, Location, PhoneNum, OperatingHoursStart, OperatingHoursEnd, ProfilePic } = data;
+  registerRestaurant: async (data,ProfilePic) => {
+    const { UserID, Name, Description, Location, PhoneNum, OperatingHoursStart, OperatingHoursEnd } = data;
     try {
       const pool = await poolPromise;
-      await pool.request()
+      const result = await pool.request()
         .input('UserID', sql.Int, UserID)
         .input('Name', sql.NVarChar(50), Name)
         .input('Description', sql.NVarChar(sql.MAX), Description)
-        .input('Location', sql.NVarChar(100), Location)
+        .input('Location', sql.NVarChar(300), Location)
         .input('PhoneNum', sql.NVarChar(13), PhoneNum)
         .input('OperatingHoursStart', sql.Time, OperatingHoursStart)
         .input('OperatingHoursEnd', sql.Time, OperatingHoursEnd)
         .input('ProfilePic', sql.VarBinary(sql.MAX), ProfilePic)
         .execute('RegisterRestaurant');
-      return { success: true, message: 'Restaurant registered successfully' };
+
+        const newRestaurantID = result.recordset[0]?.NewRestaurantID;
+
+      return { success: true, message: 'Restaurant registered successfully', RestaurantID: newRestaurantID };
     } catch (error) {
       return { success: false, message: error.message };
     }
