@@ -158,10 +158,10 @@ const Signup = () => {
       >
         <form
           onSubmit={handleSubmit}
-          className="flex flex-col gap-4 p-4 px-8 w-full justify-center items-center"
+          className="flex flex-col gap-4 px-8 w-full justify-center items-center"
         >
           <div className="flex flex-row w-full gap-4 px-2">
-            <div className="flex flex-col gap-4 p-6 w-1/2">
+            <div className="flex flex-col gap-4 py-5 px-6 w-1/2">
               {/* Form fields */}
               <div className="flex flex-col">
                 <label htmlFor="name" className="text-sm font-semibold">

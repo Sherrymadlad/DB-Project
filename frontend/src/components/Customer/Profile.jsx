@@ -260,19 +260,15 @@ const Profile = () => {
       // 2. Update password if applicable
       if (oldPassword && newPassword) {
         try {
-          await axios.put("http://localhost:5000/api/users/change-password", {
+          await axios.post("http://localhost:5000/api/users/change-password", {
             userId,
             oldPassword,
             newPassword,
           });
         } catch (err) {
-          const msg = err.response?.data?.message;
           setErrors((prev) => ({
             ...prev,
-            password:
-              msg === "Incorrect old password"
-                ? msg
-                : "Password update failed.",
+            password: "Old password doesn't match.",
           }));
           throw new Error("Password update failed.");
         }
@@ -483,27 +479,29 @@ const Profile = () => {
                   {editMode ? "Old Password" : "Password "}
                 </label>
                 {editMode ? (
-                  <div className="relative">
-                    <input
-                      type={showPasswords.current ? "text" : "password"}
-                      name="password"
-                      value={oldPassword}
-                      onChange={handleChange}
-                      className="w-full border rounded px-3 py-2"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => togglePasswordVisibility("current")}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm"
-                    >
-                      {showPasswords.current ? "Hide" : "Show"}
-                    </button>
+                  <>
+                    <div className="relative">
+                      <input
+                        type={showPasswords.current ? "text" : "password"}
+                        name="password"
+                        value={oldPassword}
+                        onChange={(e) => setOldPassword(e.target.value)}
+                        className="w-full border rounded px-3 py-2"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => togglePasswordVisibility("current")}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm"
+                      >
+                        {showPasswords.current ? "Hide" : "Show"}
+                      </button>
+                    </div>
                     {errors.password && (
                       <p className="text-red-500 text-sm mt-1">
                         {errors.password}
                       </p>
                     )}
-                  </div>
+                  </>
                 ) : (
                   <p className="text-lg mt-1">••••••••</p>
                 )}

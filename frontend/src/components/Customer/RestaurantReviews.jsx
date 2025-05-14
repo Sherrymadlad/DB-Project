@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { StarIcon } from "@heroicons/react/24/solid";
+import { StarIcon, ArrowPathIcon } from "@heroicons/react/24/solid";
 import axios from "axios";
 
 const StarRating = ({ rating }) => {
@@ -31,13 +31,13 @@ const RestaurantReviews = () => {
   const restaurantId = localStorage.getItem("restaurantId");
   const userId = localStorage.getItem("userId");
   const [restName, setRestName] = useState("...");
+  const [loading, setLoading] = useState(true);
 
   const fetchAverageRating = async () => {
     try {
       const res = await axios.get(
         `http://localhost:5000/api/stats/${restaurantId}`
       );
-      console.log(res);
       if (res.data.success) {
         setAverageRating(res.data.data.averageRating || 0);
         setRestName(res.data.data.RestaurantName);
@@ -61,7 +61,6 @@ const RestaurantReviews = () => {
       const res = await axios.get(
         `http://localhost:5000/api/restaurants/${restaurantId}`
       );
-      console.log(res);
       setRestName(res.data.data.Name);
     } catch (err) {
       return err;
@@ -94,9 +93,17 @@ const RestaurantReviews = () => {
   };
 
   useEffect(() => {
-    fetchAverageRating();
-    fetchRestaurantName(restaurantId);
-    fetchReviews();
+    const loadAll = async () => {
+      setLoading(true);
+      await Promise.all([
+        fetchAverageRating(),
+        fetchRestaurantName(restaurantId),
+        fetchReviews(),
+      ]);
+      setLoading(false);
+    };
+
+    loadAll();
   }, [sortOrder]);
 
   const handleStarClick = (index) => {
@@ -124,6 +131,13 @@ const RestaurantReviews = () => {
       }
     }
   };
+
+  if (loading)
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <ArrowPathIcon className="h-5 w-5 animate-spin text-theme-pink" />
+      </div>
+    );
 
   return (
     <div className="min-h-screen w-full text-theme-brown relative p-6">

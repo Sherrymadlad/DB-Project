@@ -1,6 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
+import {
+  MagnifyingGlassIcon,
+  ArrowPathIcon,
+} from "@heroicons/react/24/outline";
 import axios from "axios";
 import defaultRestaurantImage from "../../assets/default-restaurant.png";
 
@@ -14,36 +17,74 @@ const Restaurants = () => {
   const [loading, setLoading] = useState(true); // Manage loading state
   const [error, setError] = useState(""); // Manage error state
   const userId = localStorage.getItem("userId");
-  
+  const imageUrlCache = useRef({});
+  const createdUrls = useRef(new Set());
+
+  const getImageUrlFromBytes = (buffer, id) => {
+    if (!buffer?.data) return defaultRestaurantImage;
+
+    if (imageUrlCache.current[id]) return imageUrlCache.current[id];
+
+    const byteArray = new Uint8Array(buffer.data);
+    const blob = new Blob([byteArray], { type: "image/jpeg" });
+    const url = URL.createObjectURL(blob);
+    imageUrlCache.current[id] = url;
+    createdUrls.current.add(url);
+    return url;
+  };
+
+  useEffect(() => {
+    return () => {
+      createdUrls.current.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, []);
+
   useEffect(() => {
     if (userId) {
       const fetchData = async () => {
-        setLoading(true); // Set loading to true before fetching data
+        setLoading(true);
         setError("");
+
         try {
+          const [restaurantsRes, cuisinePrefsRes, restsPrefsRes] =
+            await Promise.all([
+              axios.get("http://localhost:5000/api/restaurants-search", {
+                params: { userId, location, sortBy },
+              }),
+              axios.get("http://localhost:5000/api/restaurants-search", {
+                params: {
+                  userId,
+                  filterBy: "PreferredCuisines",
+                  location,
+                  sortBy,
+                },
+              }),
+              axios.get("http://localhost:5000/api/restaurants-search", {
+                params: {
+                  userId,
+                  filterBy: "PreferredRestaurants",
+                  location,
+                  sortBy,
+                },
+              }),
+            ]);
 
-          const fetchPreferences = async (filterBy = null) => {
-            return await axios.get("http://localhost:5000/api/restaurants-search", {
-              params: {userId, filterBy, location, sortBy}
-            });
-          };
+          const toProcessed = (data) =>
+            data.map((restaurant) => ({
+              ...restaurant,
+              imageUrl: getImageUrlFromBytes(
+                restaurant.ProfilePic,
+                restaurant.RestaurantID
+              ),
+            }));
 
-          // Fetch restaurants
-          const restaurantsResponse = await fetchPreferences();
-
-          // Fetch both cuisines and restaurant preferences
-          const cuisinePreferencesResponse = await fetchPreferences("PreferredCuisines");
-          const restaurantPreferencesResponse = await fetchPreferences("PreferredRestaurants");
-
-          // Set the state with fetched data
-          setRestaurants(restaurantsResponse.data.data);
-          setCuisinePrefs(cuisinePreferencesResponse.data.data);
-          setRestsPrefs(restaurantPreferencesResponse.data.data);
-
-          setLoading(false); // Set loading to false after data is fetched
+          setRestaurants(toProcessed(restaurantsRes.data.data));
+          setCuisinePrefs(toProcessed(cuisinePrefsRes.data.data));
+          setRestsPrefs(toProcessed(restsPrefsRes.data.data));
         } catch (err) {
           setError("An error occurred while fetching data.");
-          setLoading(false); // Set loading to false on error
+        } finally {
+          setLoading(false);
         }
       };
 
@@ -61,9 +102,9 @@ const Restaurants = () => {
     const handleCardClick = () => {
       localStorage.setItem("restaurantId", restaurant.RestaurantID);
     };
-  
-    const imageUrl = restaurant.ProfilePic || defaultRestaurantImage;
-  
+
+    const imageUrl = restaurant.imageUrl || defaultRestaurantImage;
+
     return (
       <Link
         to="/customer/restaurants/details"
@@ -75,7 +116,9 @@ const Restaurants = () => {
             src={imageUrl}
             alt={restaurant.Name}
             className={`object-cover ${
-              imageUrl === defaultRestaurantImage ? "w-[90%] h-[90%]" : "w-full h-full"
+              imageUrl === defaultRestaurantImage
+                ? "w-[90%] h-[90%]"
+                : "w-full h-full"
             }`}
           />
         </div>
@@ -90,7 +133,14 @@ const Restaurants = () => {
         </div>
       </Link>
     );
-  };  
+  };
+
+  if (loading)
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <ArrowPathIcon className="h-5 w-5 animate-spin text-theme-pink" />
+      </div>
+    );
 
   return (
     <div className="h-screen flex flex-col">
@@ -115,16 +165,22 @@ const Restaurants = () => {
           </div>
         </div>
 
-        {/* Loading/Error States */}
-        {loading && <div>Loading...</div>}
+        {/*Error States */}
         {error && <div className="text-red-500">{error}</div>}
 
         {/* Main Sections */}
         {searchQuery ? (
           <div className="max-w-6xl mx-auto">
-            <h2 className="text-2xl font-bold text-theme-pink mb-4">Search Results</h2>
+            <h2 className="text-2xl font-bold text-theme-pink mb-4">
+              Search Results
+            </h2>
             <div className="border-b-2 border-pink-500 mb-8"></div>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
+              {filteredRestaurants.length === 0 && (
+                <div className="text-gray-500 ml-2 mt-4">
+                  No restaurants found.
+                </div>
+              )}
               {filteredRestaurants.map((restaurant, index) => (
                 <RestaurantCard key={index} restaurant={restaurant} />
               ))}
@@ -134,7 +190,9 @@ const Restaurants = () => {
           <>
             {restsPrefs.length > 0 && (
               <div className="max-w-6xl mx-auto">
-                <h2 className="text-2xl font-bold text-theme-pink mb-4">Your Faves</h2>
+                <h2 className="text-2xl font-bold text-theme-pink mb-4">
+                  Your Faves
+                </h2>
                 <div className="border-b-2 border-pink-500 mb-8"></div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
                   {restsPrefs.map((restaurant, index) => (
@@ -160,7 +218,9 @@ const Restaurants = () => {
 
             <div className="max-w-6xl mx-auto">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold text-pink-500">All Restaurants</h2>
+                <h2 className="text-2xl font-bold text-pink-500">
+                  All Restaurants
+                </h2>
                 <div className="flex space-x-4">
                   <div className="w-full flex flex-col gap-1">
                     <div className="text-sm text-gray-500">Sort By</div>
@@ -178,7 +238,8 @@ const Restaurants = () => {
                       className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-theme-pink focus:border-theme-pink"
                       onChange={(e) => setLocation(e.target.value)} // Update the location state
                     >
-                      <option value="">All</option> {/* Empty value to signify all locations */}
+                      <option value="">All</option>{" "}
+                      {/* Empty value to signify all locations */}
                       <option value="Lahore">Lahore</option>
                       <option value="Islamabad">Islamabad</option>
                       <option value="Karachi">Karachi</option>
@@ -189,15 +250,17 @@ const Restaurants = () => {
                 </div>
               </div>
               <div className="border-b-2 border-pink-500 mb-8"></div>
-              {restaurants.length>0 ? (<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
-                {restaurants.map((restaurant, index) => (
-                  <RestaurantCard key={index} restaurant={restaurant} />
-                ))}
-              </div>) : (
-              <div className="text-center text-gray-500 text-lg mt-10">
-                No restaurants available.
-              </div>
-            )}
+              {restaurants.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
+                  {restaurants.map((restaurant, index) => (
+                    <RestaurantCard key={index} restaurant={restaurant} />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center text-gray-500 text-lg mt-10">
+                  No restaurants available.
+                </div>
+              )}
             </div>
           </>
         )}

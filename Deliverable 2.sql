@@ -422,7 +422,7 @@ CREATE OR ALTER PROCEDURE RegisterRestaurant
     @UserID INT,
     @Name NVARCHAR(50),
     @Description NVARCHAR(MAX),
-    @Location NVARCHAR(100),
+    @Location NVARCHAR(300),
     @PhoneNum NVARCHAR(13),
     @OperatingHoursStart TIME,
     @OperatingHoursEnd TIME,
@@ -466,12 +466,12 @@ BEGIN
         RETURN;
     END
 
-    -- Validate operating hours logic
-    IF @OperatingHoursStart >= @OperatingHoursEnd
-    BEGIN
-        RAISERROR ('OperatingHoursStart must be earlier than OperatingHoursEnd.', 16, 1);
-        RETURN;
-    END
+	-- Check for duplicate phone number
+IF EXISTS (SELECT 1 FROM Restaurants WHERE PhoneNum = @PhoneNum)
+BEGIN
+    RAISERROR('A restaurant with this phone number already exists.', 16, 1);
+    RETURN;
+END
 
     -- Insert the new restaurant
     INSERT INTO Restaurants
