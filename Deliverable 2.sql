@@ -1814,7 +1814,7 @@ END;
 GO
 
 --Retrieve a specific restaurant's reservations with a search term on user's name and an optional filter for status 
-CREATE OR ALTER PROCEDURE ViewRestaurantReservations
+CREATE OR ALTER PROCEDURE ViewReservationsRestaurant
     @RestaurantID INT,
     @SearchTerm NVARCHAR(100) = NULL,
     @Status NVARCHAR(20) = NULL

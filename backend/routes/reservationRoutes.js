@@ -13,6 +13,8 @@ router.post('/reservations/complete', reservationController.completeReservation)
 
 // Reservations for specific User/Restaurant
 router.get('/reservations-user', reservationController.viewReservationsUser);
+router.get('/reservations-rest', reservationController.viewReservationsRestaurant);
+router.get('/reservations-rest-today', reservationController.viewReservationsToday);
 
 // Payments
 router.post('/reservations/payment', reservationController.processPayment);

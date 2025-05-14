@@ -85,7 +85,7 @@ const ReservationModel = {
     }
   },
 
-  // View reservations for a user or specific restaurant
+  // View reservations for a user
   viewReservationsUser: async (userId, status = null) => {
     try {
       const pool = await poolPromise;
@@ -99,6 +99,41 @@ const ReservationModel = {
       }
 
       const result = await request.execute('ViewReservationsUser');
+      return result.recordset; 
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  },
+
+    // View reservations for a specific restaurant
+  viewReservationsRestaurant: async (restaurantId, status = null) => {
+    try {
+      const pool = await poolPromise;
+      const request = pool.request();
+
+      request.input('RestaurantID', sql.Int, restaurantId);
+
+      // Input for Status (only if provided)
+      if (status) {
+        request.input('Status', sql.NVarChar(sql.MAX), status);
+      }
+
+      const result = await request.execute('ViewReservationsRestaurant');
+      return result.recordset; 
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  },
+
+    // View reservations for a user
+  viewReservationsToday: async (restaurantId) => {
+    try {
+      const pool = await poolPromise;
+      const request = pool.request();
+
+      request.input('RestaurantID', sql.Int, restaurantId);
+
+      const result = await request.execute('GetTodayApprovedReservations');
       return result.recordset; 
     } catch (error) {
       throw new Error(error.message);

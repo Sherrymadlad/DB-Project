@@ -73,6 +73,37 @@ module.exports = {
     }
   },
 
+    viewReservationsRestaurant: async (req, res) => {
+    const { restaurantId, status } = req.query;
+    try {
+      const data = await ReservationModel.viewReservationsRestaurant(
+        restaurantId,
+        status ? status : null
+      );
+      if (!data.length)
+        return res.status(404).json({ success: false, message: 'No reservations found' });
+
+      res.status(200).json({ success: true, message: 'Reservations retrieved', data });
+    } catch (error) {
+      res.status(500).json({ success: false, message: 'Error retrieving reservations', error: error.message });
+    }
+  },
+
+      viewReservationsToday: async (req, res) => {
+    const { restaurantId } = req.query;
+    try {
+      const data = await ReservationModel.viewReservationsToday(
+        restaurantId
+      );
+      if (!data.length)
+        return res.status(404).json({ success: false, message: 'No reservations found' });
+
+      res.status(200).json({ success: true, message: 'Reservations retrieved', data });
+    } catch (error) {
+      res.status(500).json({ success: false, message: 'Error retrieving reservations', error: error.message });
+    }
+  },
+
   processPayment: async (req, res) => {
     const { reservationId, amount, method } = req.body;
     try {
