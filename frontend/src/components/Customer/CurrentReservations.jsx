@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 
 const Reservations = () => {
@@ -10,6 +10,8 @@ const Reservations = () => {
   const [showModal, setShowModal] = useState(false);
 
   const userId = localStorage.getItem("userId");
+
+  const navigate = useNavigate();
 
   // Fetch reservations when component mounts or filter/sort options change
   const fetchReservations = async () => {
@@ -77,6 +79,11 @@ const Reservations = () => {
     const dateB = new Date(b.Time);
     return sortOption === "time-asc" ? dateA - dateB : dateB - dateA;
   });
+
+  const handleClick = (reservationID) => {
+    localStorage.setItem("reservationId", reservationID);
+    navigate("/customer/reservations/modify");
+  };
 
   return (
     <div className="h-screen text-theme-brown">
@@ -217,9 +224,12 @@ const Reservations = () => {
                         {reservation.Request || "None"}
                       </p>
                       <div className="flex w-1/2 flex-row items-center justify-end gap-4">
-                        <button className="w-1/3 py-3 px-4 bg-theme-pink text-white text-sm font-semibold rounded hover:bg-pink-600 transition duration-200">
+                        {/* <button
+                          onClick={() => handleClick(reservation.ReservationID)}
+                          className="w-1/3 py-3 px-4 bg-theme-pink text-white text-sm font-semibold rounded hover:bg-pink-600 transition duration-200"
+                        >
                           Modify
-                        </button>
+                        </button> */}
                         <button
                           onClick={() =>
                             handleCancel(reservation.ReservationID)

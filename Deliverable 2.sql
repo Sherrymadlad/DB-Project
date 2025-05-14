@@ -820,10 +820,10 @@ END;
 GO
 
 --All admins for a specfic restaurant
-SELECT U.UserID, U.Name, U.Email, U.PhoneNum
+SELECT U.UserID, U.Name, U.Email, U.PhoneNum, U.ProfilePic
 FROM Users U
     JOIN RestaurantAdmins RA ON U.UserID = RA.UserID
-WHERE RA.RestaurantID = @Restaurantid;  
+WHERE RA.RestaurantID = @RestaurantID;  
 GO
 
 --Number of admins for a specific restaurant
@@ -842,10 +842,15 @@ CREATE OR ALTER PROCEDURE AssignRestaurantStaff
     @RestaurantID INT,
     @UserID INT,
     -- The user requesting the action
-    @TargetUserID INT
+    @TargetUserName nvarchar(20)
 -- The user being assigned as staff
 AS
 BEGIN
+DECLARE @TargetUserID INT;
+	SELECT @TargetUserID = UserID
+    FROM Users
+    WHERE Username = @TargetUsername;
+
     -- Check if the requester (@UserID) is an Admin of the restaurant
     IF NOT EXISTS (SELECT 1
     FROM RestaurantAdmins
@@ -915,7 +920,7 @@ END;
 GO
 
 -- All staff for a specific restaurant
-SELECT U.UserID, U.Name, U.Email, U.PhoneNum
+SELECT U.UserID, U.Name, U.Email, U.PhoneNum, U.ProfilePic
 FROM Users U
     JOIN RestaurantStaff RS ON U.UserID = RS.UserID
 WHERE RS.RestaurantID = @RestaurantID;
