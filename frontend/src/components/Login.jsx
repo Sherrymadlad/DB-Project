@@ -28,11 +28,13 @@ const Login = () => {
 
       const user = authRes.data.data;
       const restaurantId = authRes.data.id;
+      // Save user info
       localStorage.setItem("userId", JSON.stringify(user.UserID));
       localStorage.setItem("restaurantId",restaurantId);
 
       const userRole = user.Role;
 
+      // Navigate based on role
       if (userRole === "Admin") {
         navigate("/admin/restaurants");
       } else if (userRole === "Staff") {        

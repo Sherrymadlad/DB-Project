@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import axios from "axios"; 
+import axios from "axios"; // Import axios for making API calls
 import background from "../assets/signup-bg.jpg";
 import { UserCircleIcon } from "@heroicons/react/24/solid";
-import { useNavigate } from "react-router-dom"; 
+import { useNavigate } from "react-router-dom"; // Use for navigation after successful signup
 
 const Signup = () => {
   const [formData, setFormData] = useState({
@@ -16,10 +16,10 @@ const Signup = () => {
   });
   const [preview, setPreview] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
-  const [errors, setErrors] = useState({}); 
-  const [loading, setLoading] = useState(false); 
-  const [modalVisible, setModalVisible] = useState(false); 
-  const navigate = useNavigate(); 
+  const [errors, setErrors] = useState({}); // To handle individual field errors
+  const [loading, setLoading] = useState(false); // To handle loading state
+  const [modalVisible, setModalVisible] = useState(false); // State for controlling modal visibility
+  const navigate = useNavigate(); // For redirecting to other pages
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
@@ -36,6 +36,7 @@ const Signup = () => {
     }
   };
 
+  // Validate the form data before submitting
   const validateForm = () => {
     const newErrors = {};
 
@@ -54,12 +55,12 @@ const Signup = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setErrors({}); 
-    setLoading(true); 
+    setErrors({}); // Reset errors before validation
+    setLoading(true); // Set loading state while the API request is in progress
 
     const validationErrors = validateForm();
     if (validationErrors) {
-      setErrors(validationErrors); 
+      setErrors(validationErrors); // Set validation errors if there are any
       setLoading(false);
       return;
     }
@@ -87,16 +88,21 @@ const Signup = () => {
 
       console.log("User created successfully:", response.data);
 
+      // Fetch user details after creation (using the user ID from the response)
       const userId = response.data.userId;
 
+      // Store the user ID in local storage
       localStorage.setItem("userId", userId);
 
-      setModalVisible(true); 
+      setModalVisible(true); // Show the modal on successful signup
     } catch (err) {
-      setLoading(false); 
+      setLoading(false); // Reset loading state after API call
+
+      // Handle errors from API response
       if (err.response) {
         const message = err.response.data.error;
 
+        // Specific error handling based on the stored procedure error messages
         if (message.includes("role")) {
           setErrors((prevErrors) => ({
             ...prevErrors,
@@ -122,6 +128,7 @@ const Signup = () => {
           }));
         }
       } else {
+        // In case of network error or other unexpected errors
         setErrors({
           api: err.message || "Signup failed. Please try again later.",
         });

@@ -26,16 +26,19 @@ const AddReviews = () => {
         const restaurantData = response.data.data;
         setRestaurants(restaurantData);
 
+        // Initialize image and rating data
         const ratingsData = {};
         const imageURLMap = {};
 
         for (let restaurant of restaurantData) {
+          // Fetch average rating
           const ratingResponse = await axios.get(
             `http://localhost:5000/api/stats/${restaurant.RestaurantID}`
           );
           ratingsData[restaurant.RestaurantID] =
             ratingResponse.data.data.averageRating;
 
+          // Convert profilePic binary to Blob URL if exists
           if (restaurant.ProfilePic && restaurant.ProfilePic.data) {
             const byteArray = new Uint8Array(restaurant.ProfilePic.data);
             const blob = new Blob([byteArray], { type: "image/jpeg" });
@@ -65,7 +68,10 @@ const AddReviews = () => {
   const handleSearchChange = (e) => setSearchQuery(e.target.value);
 
   const handleRestaurantClick = (restaurantId) => {
+    // Store the RestaurantID directly in localStorage
     localStorage.setItem("restaurantId", restaurantId);
+
+    // Redirect to restaurant reviews page
     navigate("/customer/restaurants/reviews");
   };
 
@@ -154,9 +160,9 @@ const AddReviews = () => {
             )
             .map((restaurant, index) => (
               <RestaurantCard
-                key={index} 
+                key={index} // Use index as the key
                 restaurant={restaurant}
-                index={index} 
+                index={index} // Pass index to the component
               />
             ))}
         </div>

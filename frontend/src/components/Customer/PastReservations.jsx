@@ -11,6 +11,7 @@ const PastReservations = () => {
 
   const userId = localStorage.getItem("userId");
 
+  // Fetch reservations when component mounts or filter/sort options change
   const fetchReservations = async () => {
     try {
       const statusQuery =
@@ -24,6 +25,7 @@ const PastReservations = () => {
       setReservations(response.data.data);
     } catch (error) {
       if (error.response && error.response.status === 404) {
+        // Treat 404 as no reservations found
         setReservations([]);
       } else {
         console.error("Error fetching reservations:", error);

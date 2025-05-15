@@ -93,6 +93,7 @@ const ReservationModel = {
 
       request.input('UserID', sql.Int, userId);
 
+      // Input for Status (only if provided)
       if (status) {
         request.input('Statuses', sql.NVarChar(sql.MAX), status);
       }
@@ -112,6 +113,7 @@ const ReservationModel = {
 
       request.input('RestaurantID', sql.Int, restaurantId);
 
+      // Input for Status (only if provided)
       if (status) {
         request.input('Status', sql.NVarChar(sql.MAX), status);
       }

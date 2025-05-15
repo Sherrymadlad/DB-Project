@@ -126,6 +126,7 @@ const Profile = () => {
 
     const { Name, Username, Email, PhoneNum, profilePic } = formData;
 
+    // === FRONTEND VALIDATION ===
     const newErrors = {
       Name: Name.trim() === "" ? "Name is required." : "",
       Username: Username.trim() === "" ? "Username is required." : "",
@@ -158,7 +159,9 @@ const Profile = () => {
       return;
     }
 
+    // === BACKEND CALLS ===
     try {
+      // 1. Update user info
       try {
         const formDataToSend = new FormData();
         formDataToSend.append("name", Name);
@@ -204,12 +207,15 @@ const Profile = () => {
             ...prev,
             ...fieldErrors,
           }));
+          // Don't throw a new error message that will override it
           throw null;
         } else {
+          // No specific field errors, fall back to generic
           throw new Error("Failed to update user info.");
         }
       }
 
+      // 2. Update password if applicable
       if (oldPassword && newPassword) {
         try {
           await axios.post("http://localhost:5000/api/users/change-password", {
@@ -226,13 +232,14 @@ const Profile = () => {
         }
       }
 
+      // Final cleanup
       setEditMode(false);
       setOldPassword("");
       setNewPassword("");
       await fetchUserDetails();
     } catch (err) {
       console.error("Update Error:", err);
-      if (!err) return; 
+      if (!err) return; // Skip if already handled field-specific errors
 
       if (typeof err === "string" || err instanceof Error) {
         setErrors((prev) => ({
@@ -252,9 +259,11 @@ const Profile = () => {
   const handleDeleteAccount = async () => {
     try {
       await axios.delete(`http://localhost:5000/api/users/${userId}`);
-  
+
+      // Clear all user-related data
       localStorage.clear();
-      
+
+      // Navigate to homepage
       navigate("/");
     } catch (err) {
       console.error("Failed to delete account:", err);

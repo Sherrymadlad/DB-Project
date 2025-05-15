@@ -40,6 +40,7 @@ const UserModel = {
         const pool = await poolPromise;
         const request = pool.request();
 
+        // Setting up inputs for the stored procedure
         request.input('Name', sql.NVarChar, name)
             .input('Username', sql.NVarChar, username)
             .input('Password', sql.NVarChar, password)
@@ -53,10 +54,13 @@ const UserModel = {
             request.input('ProfilePic', sql.VarBinary, null);
         }
 
+        // Define output parameter for UserId
         request.output('UserId', sql.Int);
 
+        // Execute the stored procedure
         const result = await request.execute('RegisterUser');
 
+        // Capture the UserId from the output parameter
         userId = result.output.UserId;
 
         return { message: 'User created successfully', userId: userId };

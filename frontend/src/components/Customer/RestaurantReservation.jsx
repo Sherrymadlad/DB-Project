@@ -80,6 +80,7 @@ const RestaurantReservation = () => {
 
     if (hasErrors) return;
 
+    // Proceed to confirmation
     navigate("/customer/restaurants/reservations/confirmation", {
       state: {
         dateTime: selectedDateTime,

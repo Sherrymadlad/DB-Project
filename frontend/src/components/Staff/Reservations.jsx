@@ -14,12 +14,14 @@ const Reservations = () => {
   const userId = localStorage.getItem("userId");
 
   useEffect(() => {
+    // If restaurantId is missing, alert and redirect or show fallback
     if (!restaurantId) {
       setError("Missing restaurant ID. Please log in or select a restaurant.");
       setLoading(false);
       return;
     }
 
+    // Save to localStorage for persistence
     localStorage.setItem("restaurantId", restaurantId);
 
     const fetchReservations = async () => {
