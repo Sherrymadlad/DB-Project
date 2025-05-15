@@ -37,7 +37,7 @@ const UpcomingReservations = () => {
 
     if (response.data.success) {
       setReservations(response.data.data);
-      setError(null); // Clear any previous error
+      setError(null); 
     } else {
       setError(response.data.message || "Failed to fetch reservations.");
     }
@@ -175,7 +175,7 @@ const UpcomingReservations = () => {
                     <div className="flex flex-row justify-end gap-4">
                       <button
                         onClick={(e) => {
-                          e.stopPropagation(); // Prevent toggling expansion when clicking button
+                          e.stopPropagation(); 
                           markAsCompleted(res.ReservationID);
                         }}
                         disabled={res.Status === "Completed"}

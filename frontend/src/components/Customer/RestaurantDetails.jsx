@@ -33,7 +33,6 @@ const RestaurantDetails = () => {
             ),
           ]);
 
-        // Convert profilePic buffer to object URL
         let profilePicUrl = null;
         const buffer = restaurantRes.data.data.ProfilePic;
         if (buffer?.data) {
@@ -42,14 +41,12 @@ const RestaurantDetails = () => {
           profilePicUrl = URL.createObjectURL(blob);
         }
 
-        // Convert all image buffers to object URLs
         const imagesArray = imageRes.data.data.map((imgBuffer) => {
           const byteArray = new Uint8Array(imgBuffer.Image.data);
           const blob = new Blob([byteArray], { type: "image/jpeg" });
           return URL.createObjectURL(blob);
         });
 
-        // Fetch cuisines
         let cuisinesData = [];
         try {
           const cuisinesRes = await axios.get(
@@ -62,7 +59,6 @@ const RestaurantDetails = () => {
           }
         }
 
-        // Set state
         setRestaurant({ ...restaurantRes.data.data, profilePicUrl });
         setRating(ratingRes.data.data.averageRating);
         setLiked(

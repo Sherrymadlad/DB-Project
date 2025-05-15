@@ -34,9 +34,9 @@ const ReservationPayment = () => {
         request: specialRequest,
       });
       const reservationId = res.data.data;
-      const amount = 100; // Set amount for the reservation
-      const status = "Completed"; // Payment status
-      const method = "Card"; // Payment method
+      const amount = 100; 
+      const status = "Completed"; 
+      const method = "Card";
       const isoDateTime2 = new Date(dateTime).toISOString();
 
       await axios.post("http://localhost:5000/api/payments", {

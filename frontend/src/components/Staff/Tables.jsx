@@ -12,7 +12,6 @@ const Tables = () => {
   const restaurantId = localStorage.getItem("restaurantId");
   const userId = localStorage.getItem("userId"); // adjust if stored differently
 
-  // Fetch tables from API
   const fetchTables = async () => {
     setLoading(true);
     try {
@@ -36,18 +35,15 @@ const Tables = () => {
     if (restaurantId) fetchTables();
   }, [restaurantId]);
 
-  // Filter tables by status
   const filteredTables = tables.filter((table) =>
     statusFilter === "All"
       ? true
       : table.Status?.toLowerCase() === statusFilter.toLowerCase()
   );
 
-  // Capitalize status for display
   const formatStatus = (status) =>
     status ? status.charAt(0).toUpperCase() + status.slice(1).toLowerCase() : "";
 
-  // Update table status API call
   const updateTableStatus = async () => {
     if (!selectedTable) return;
     setUpdating(true);
@@ -59,7 +55,6 @@ const Tables = () => {
           newStatus: selectedTable.Status,
         }
       );
-      // Update local table state after successful update
       setTables((prevTables) =>
         prevTables.map((table) =>
           table.TableID === selectedTable.TableID
@@ -67,7 +62,7 @@ const Tables = () => {
             : table
         )
       );
-      setSelectedTable(null); // Close modal
+      setSelectedTable(null); 
     } catch (error) {
       console.error("Failed to update status:", error);
       alert("Failed to update table status. Please try again.");
