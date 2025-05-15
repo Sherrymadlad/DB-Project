@@ -38,15 +38,23 @@ module.exports = {
   getStats: async (req, res) => {
     try {
       const { restaurantId } = req.params;
-      const [count, avgRating] = await Promise.all([
+      const [count, avgRating, totalReservations, totalRevenue, numAdmins, numStaff] = await Promise.all([
         reviewModel.getReviewCount(restaurantId),
-        reviewModel.getAverageRating(restaurantId)
+        reviewModel.getAverageRating(restaurantId),
+        reviewModel.getTotalReservations(restaurantId),
+        reviewModel.getTotalRevenue(restaurantId),
+        reviewModel.getNoOfAdmins(restaurantId),
+        reviewModel.getNoOfStaff(restaurantId)
       ]);
       res.json({ 
         success: true, 
         data: { 
           totalReviews: count, 
-          averageRating: avgRating 
+          averageRating: avgRating,
+          totalReservations: totalReservations,
+          totalRevenue: totalRevenue,
+          numAdmins: numAdmins,
+          numStaff: numStaff
         } 
       });
     } catch (error) {

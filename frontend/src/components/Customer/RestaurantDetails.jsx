@@ -43,11 +43,15 @@ const RestaurantDetails = () => {
         }
 
         // Convert all image buffers to object URLs
-        const imagesArray = imageRes.data.data.map((imgBuffer) => {
-          const byteArray = new Uint8Array(imgBuffer.Image.data);
-          const blob = new Blob([byteArray], { type: "image/jpeg" });
-          return URL.createObjectURL(blob);
-        });
+        const imagesArray = Array.isArray(imageRes.data?.data)
+          ? imageRes.data.data
+              .filter((imgBuffer) => imgBuffer?.Image?.data)
+              .map((imgBuffer) => {
+                const byteArray = new Uint8Array(imgBuffer.Image.data);
+                const blob = new Blob([byteArray], { type: "image/jpeg" });
+                return URL.createObjectURL(blob);
+              })
+          : [];
 
         // Fetch cuisines
         let cuisinesData = [];
