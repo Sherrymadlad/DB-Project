@@ -1,97 +1,453 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { StarIcon, CameraIcon } from '@heroicons/react/24/solid';
-import { PencilIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import axios from "axios";
+import { StarIcon, CameraIcon } from "@heroicons/react/24/solid";
+import { PencilIcon, PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
+import defaultRestaurantImage from "../../assets/default-restaurant.png";
+import { ArrowPathIcon } from "@heroicons/react/24/solid";
 
 export default function RestaurantDetails() {
   const [editMode, setEditMode] = useState(false);
-  const [restaurant, setRestaurant] = useState({
-    name: 'The Spice Route',
-    description: 'An exotic blend of traditional and modern Asian cuisine.',
-    location: '123 Food Street, Karachi',
-    cuisines: ['Thai', 'Indian', 'Chinese'],
-    phone: '+92 300 1234567',
-    startTime: '10:00',
-    endTime: '21:00',
-    rating: 4.7,
-    image: 'https://source.unsplash.com/300x300/?restaurant',
-    headerImage: 'https://source.unsplash.com/1600x400/?restaurant-interior',
-    totalReservations: 120,
-    avgRating: 4.7,
-    reviewCount: 85,
-    totalRevenue: 12000,
-    adminCount: 3,
-    staffCount: 15,
-    tables: [
-      { capacity: 4, description: "yes" },
-      { capacity: 2, description: "no" },
-      { capacity: 6, description: "hmmmmm" },
-    ],
-    galleryImages: [
-      'https://source.unsplash.com/400x300/?restaurant,food,1',
-      'https://source.unsplash.com/400x300/?restaurant,food,2',
-    ],
-  });
+  const [newCuisine, setNewCuisine] = useState("");
+  const [newTable, setNewTable] = useState({ description: "", capacity: "" });
+  const [restaurant, setRestaurant] = useState(null);
+  const [images, setImages] = useState([]); // existing
+  const [newImages, setNewImages] = useState([]); // for newly added
+  const [deletedImageUrls, setDeletedImageUrls] = useState([]); // for removed images (original ones)
+  const [cuisines, setCuisines] = useState([]);
+  const [allCuisines, setAllCuisines] = useState([]);
+  const [deletedCuisineIds, setDeletedCuisineIds] = useState([]);
+  const [tables, setTables] = useState([]);
+  const [newTables, setNewTables] = useState([]);
+  const [deletedTableIds, setDeletedTableIds] = useState([]);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const restaurantId = localStorage.getItem("restaurantId");
+  const userId = localStorage.getItem("userId");
 
-  const [newCuisine, setNewCuisine] = useState('');
-  const [newTable, setNewTable] = useState({ number: '', capacity: '' });
+  const fetchData = async () => {
+    try {
+      const [restaurantRes, imageRes, statsRes, allcuisinesRes] =
+        await Promise.all([
+          axios.get(`http://localhost:5000/api/restaurants/${restaurantId}`),
+          axios.get(
+            `http://localhost:5000/api/restaurants/${restaurantId}/images`
+          ),
+          axios.get(`http://localhost:5000/api/stats/${restaurantId}`),
+          axios.get("http://localhost:5000/api/cuisines"),
+        ]);
+
+      // Convert profilePic buffer to object URL
+      let profilePicUrl = null;
+      const buffer = restaurantRes.data.data.ProfilePic;
+      if (buffer?.data) {
+        const byteArray = new Uint8Array(buffer.data);
+        const blob = new Blob([byteArray], { type: "image/jpeg" });
+        profilePicUrl = URL.createObjectURL(blob);
+      }
+
+      // Convert all image buffers to object URLs
+      const imagesArray = Array.isArray(imageRes.data?.data)
+        ? imageRes.data.data
+            .filter((imgBuffer) => imgBuffer?.Image?.data)
+            .map((imgBuffer) => {
+              const byteArray = new Uint8Array(imgBuffer.Image.data);
+              const blob = new Blob([byteArray], { type: "image/jpeg" });
+              const url = URL.createObjectURL(blob);
+              return { url, ImageID: imgBuffer.ImageID, isNew: false }; // 👈 matches format of uploaded images
+            })
+        : [];
+
+      // Fetch cuisines
+      let cuisinesData = [];
+      try {
+        const cuisinesRes = await axios.get(
+          `http://localhost:5000/api/restaurants/${restaurantId}/cuisines`
+        );
+        cuisinesData = cuisinesRes.data.data;
+      } catch (err) {
+        if (err.response?.status !== 404) {
+          console.error("Failed to fetch cuisines:", err);
+        }
+      }
+
+      // Fetch Tables
+      let tablesData = [];
+      try {
+        const tablesRes = await axios.get(
+          `http://localhost:5000/api/restaurants/${restaurantId}/tables`
+        );
+        tablesData = tablesRes.data;
+      } catch (err) {
+        if (err.response?.status !== 404) {
+          console.error("Failed to fetch tables:", err);
+        }
+      }
+      const mergedRestaurant = {
+        ...restaurantRes.data.data,
+        ...statsRes.data.data,
+        profilePicUrl,
+      };
+
+      // Set state
+      setRestaurant(mergedRestaurant);
+      setImages(imagesArray);
+      setCuisines(cuisinesData);
+      setAllCuisines(allcuisinesRes.data.data);
+      tablesData = tablesData.map((t) => ({
+        TableID: t.TableID || null,
+        capacity: t.Capacity,
+        description: t.Description,
+      }));
+      setTables(tablesData);
+    } catch (err) {
+      console.error("Failed to fetch restaurant data:", err);
+    }
+  };
+
+  useEffect(() => {
+    if (!restaurantId) return;
+
+    fetchData();
+  }, []);
 
   const handleCuisineAdd = () => {
-    if (newCuisine.trim()) {
-      setRestaurant({
-        ...restaurant,
-        cuisines: [...restaurant.cuisines, newCuisine.trim()],
-      });
-      setNewCuisine('');
+    const selectedCuisine = allCuisines.find(
+      (c) => c.CuisineID === Number(newCuisine)
+    );
+
+    if (
+      selectedCuisine &&
+      !cuisines.some((c) => c.CuisineName === selectedCuisine.Name)
+    ) {
+      setCuisines([
+        ...cuisines,
+        {
+          CuisineID: selectedCuisine.CuisineID,
+          CuisineName: selectedCuisine.Name,
+          isNew: true,
+        },
+      ]);
+      setNewCuisine("");
     }
   };
 
   const handleCuisineRemove = (index) => {
-    setRestaurant({
-      ...restaurant,
-      cuisines: restaurant.cuisines.filter((_, i) => i !== index),
-    });
+    const cuisineToRemove = cuisines[index];
+    if (cuisineToRemove.CuisineID) {
+      setDeletedCuisineIds((prev) => [...prev, cuisineToRemove.CuisineID]);
+    }
+    setCuisines(cuisines.filter((_, i) => i !== index));
   };
 
   const handleTableAdd = () => {
-    const description = newTable.description;
-    const capacity = parseInt(newTable.capacity);
-    if (!isNaN(capacity)) {
-      setRestaurant({
-        ...restaurant,
-        tables: [...restaurant.tables, { capacity,description }],
-      });
-      setNewTable({ capacity: '',description: '' });
-    }
+    const { description, capacity } = newTable;
+    const parsedCapacity = parseInt(capacity);
+
+    if (!description || isNaN(parsedCapacity)) return;
+
+    setNewTables((prev) => [
+      ...prev,
+      { description, capacity: parsedCapacity },
+    ]);
+
+    setTables((prev) => [
+      ...prev,
+      { description, capacity: parsedCapacity, isNew: true },
+    ]);
+
+    setNewTable({ description: "", capacity: "" });
   };
 
   const handleTableRemove = (index) => {
-    setRestaurant({
-      ...restaurant,
-      tables: restaurant.tables.filter((_, i) => i !== index),
-    });
+    const tableToRemove = tables[index];
+
+    if (!tableToRemove.isNew && tableToRemove.TableID) {
+      setDeletedTableIds((prev) => [...prev, tableToRemove.TableID]);
+    } else {
+      setNewTables((prev) =>
+        prev.filter(
+          (t) =>
+            !(
+              t.description === tableToRemove.description &&
+              t.capacity === tableToRemove.capacity
+            )
+        )
+      );
+    }
+
+    setTables((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleProfilePictureUpload = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const localUrl = URL.createObjectURL(file);
+
+    setRestaurant((prev) => ({
+      ...prev,
+      profilePicUrl: localUrl,
+      profilePicFile: file,
+    }));
+  };
+
+  const handleImageUpload = (event) => {
+    const files = Array.from(event.target.files);
+    if (!files.length) return;
+
+    const newImageUrls = files.map((file) => ({
+      url: URL.createObjectURL(file),
+      file, // for uploading later
+      isNew: true,
+    }));
+
+    setImages((prev) => [...prev, ...newImageUrls]);
+    setNewImages((prev) => [...prev, ...newImageUrls]);
   };
 
   const handleImageRemove = (index) => {
-    setRestaurant({
-      ...restaurant,
-      galleryImages: restaurant.galleryImages.filter((_, i) => i !== index),
+    const imageToRemove = images[index];
+
+    if (!imageToRemove.isNew && imageToRemove.ImageID) {
+      setDeletedImageUrls((prev) => [...prev, imageToRemove.ImageID]);
+    } else {
+      // If it's new, also remove from newImages
+      setNewImages((prev) =>
+        prev.filter((img) => img.url !== imageToRemove.url)
+      );
+    }
+
+    setImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const formatTimeForInput = (isoString) => {
+    if (!isoString) return "";
+    const date = new Date(isoString);
+    const hours = date.getHours().toString().padStart(2, "0");
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+    return `${hours}:${minutes}`;
+  };
+
+  const formatTimeForDisplay = (isoString) => {
+    if (!isoString) return "";
+    const date = new Date(isoString);
+    return date.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
     });
   };
+
+  const updateTimeInISO = (isoString, timeStr) => {
+    if (!isoString) return "";
+    const date = new Date(isoString);
+    const [hours, minutes] = timeStr.split(":");
+    date.setHours(parseInt(hours, 10));
+    date.setMinutes(parseInt(minutes, 10));
+    date.setSeconds(0);
+    date.setMilliseconds(0);
+    return date.toISOString();
+  };
+
+  const handleSubmit = async () => {
+    setLoading(true);
+    if (editMode) {
+      try {
+        const formData = new FormData();
+        formData.append("UserID", userId);
+        formData.append("RestaurantID", restaurantId);
+        formData.append("Name", restaurant.Name || "");
+        formData.append("Description", restaurant.Description || "");
+        formData.append("PhoneNum", restaurant.PhoneNum || "");
+        formData.append(
+          "OperatingHoursStart",
+          restaurant.OperatingHoursStart || ""
+        );
+        formData.append(
+          "OperatingHoursEnd",
+          restaurant.OperatingHoursEnd || ""
+        );
+
+        if (restaurant.profilePicFile) {
+          formData.append("ProfilePic", restaurant.profilePicFile);
+        }
+
+        try {
+          await axios.put("http://localhost:5000/api/restaurants", formData, {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          });
+        } catch (err) {
+          console.error("Update restaurant failed:", err);
+
+          if (err.response && err.response.data) {
+            const backendMessage =
+              err.response.data.message || "An error occurred.";
+            setErrorMessage(backendMessage);
+          } else if (err.request) {
+            setErrorMessage(
+              "No response from the server. Please try again later."
+            );
+          } else {
+            setErrorMessage(`Unexpected error: ${err.message}`);
+          }
+
+          return;
+        }
+
+        // Upload new images
+        for (const img of newImages) {
+          const formData = new FormData();
+          formData.append("image", img.file);
+          formData.append("UserID", userId);
+
+          await axios.post(
+            `http://localhost:5000/api/restaurants/${restaurantId}/add-image`,
+            formData,
+            {
+              headers: { "Content-Type": "multipart/form-data" },
+            }
+          );
+        }
+
+        // Delete removed images
+        for (const imageId of deletedImageUrls) {
+          await axios.delete(
+            `http://localhost:5000/api/restaurants/${restaurantId}/delete-image`,
+            {
+              data: {
+                UserID: userId,
+                ImageID: imageId,
+              },
+            }
+          );
+        }
+
+        // ✅ Add new tables
+        for (const table of newTables) {
+          await axios.post("http://localhost:5000/api/tables", {
+            userId,
+            restaurantId,
+            description: table.description,
+            capacity: table.capacity,
+          });
+        }
+
+        // ✅ Delete removed tables
+        for (const tableId of deletedTableIds) {
+          await axios.delete(`http://localhost:5000/api/tables/${tableId}`, {
+            data: { userId },
+          });
+        }
+
+        // Add new cuisines
+        for (const cuisine of cuisines) {
+          if (cuisine.isNew) {
+            await axios.post("http://localhost:5000/api/restaurants-cuisines", {
+              RestaurantID: restaurantId,
+              CuisineID: cuisine.CuisineID,
+            });
+          }
+        }
+
+        // Remove deleted cuisines
+        for (const cuisineId of deletedCuisineIds) {
+          await axios.delete("http://localhost:5000/api/restaurants-cuisines", {
+            params: {
+              RestaurantID: restaurantId,
+              CuisineID: cuisineId,
+            },
+          });
+        }
+
+        // Clear temporary state
+        setNewImages([]);
+        setDeletedImageUrls([]);
+        setNewTables([]);
+        setDeletedTableIds([]);
+        setDeletedCuisineIds([]);
+        setErrorMessage("");
+        await fetchData();
+      } catch (err) {
+        console.error("Failed to update images:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  if (!restaurant)
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <ArrowPathIcon className="h-5 w-5 animate-spin text-theme-pink" />
+      </div>
+    );
 
   return (
     <div className="min-h-screen w-full bg-gray-50 text-theme-brown p-6 relative">
       {/* Top Navigation */}
       <div className="flex justify-between items-center mb-8">
         <div className="flex gap-4">
-          <Link className="bg-theme-pink text-white px-4 py-2 rounded shadow-md" to="/admin/restaurants/details">Details</Link>
-          <Link className="bg-white border px-4 py-2 rounded hover:bg-gray-100" to="/admin/restaurants/reviews">Reviews</Link>
-          <Link className="bg-white border px-4 py-2 rounded hover:bg-gray-100" to="/admin/restaurants/admins">Admins</Link>
-          <Link className="bg-white border px-4 py-2 rounded hover:bg-gray-100" to="/admin/restaurants/staff">Staff</Link>
+          <Link
+            className="bg-theme-pink text-white px-4 py-2 rounded shadow-md"
+            to="/admin/restaurants/details"
+          >
+            Details
+          </Link>
+          <Link
+            className="bg-white border px-4 py-2 rounded hover:bg-gray-100"
+            to="/admin/restaurants/reviews"
+          >
+            Reviews
+          </Link>
+          <Link
+            className="bg-white border px-4 py-2 rounded hover:bg-gray-100"
+            to="/admin/restaurants/admins"
+          >
+            Admins
+          </Link>
+          <Link
+            className="bg-white border px-4 py-2 rounded hover:bg-gray-100"
+            to="/admin/restaurants/staff"
+          >
+            Staff
+          </Link>
         </div>
-        <button onClick={() => setEditMode(!editMode)} className="flex items-center gap-1 text-sm bg-gray-100 border px-3 py-1 rounded">
-          <PencilIcon className="w-4 h-4" />
-          {editMode ? 'Finish Editing' : 'Edit'}
+        <button
+          onClick={() => {
+            if (editMode) handleSubmit();
+            setEditMode(!editMode);
+          }}
+          disabled={loading}
+          className="flex items-center gap-1 text-sm bg-gray-100 border px-3 py-1 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {loading ? (
+            <>
+              <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24">
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                />
+              </svg>
+              Loading...
+            </>
+          ) : (
+            <>
+              <PencilIcon className="w-4 h-4" />
+              {editMode ? "Finish Editing" : "Edit"}
+            </>
+          )}
         </button>
       </div>
 
@@ -100,7 +456,7 @@ export default function RestaurantDetails() {
         <div className="flex flex-col gap-4">
           <div className="relative w-60 aspect-square rounded-full overflow-hidden border-4 border-theme-pink shadow-md flex-shrink-0">
             <img
-              src={restaurant.image}
+              src={restaurant?.profilePicUrl || defaultRestaurantImage}
               alt="Restaurant"
               className="w-full h-full object-cover"
             />
@@ -111,10 +467,10 @@ export default function RestaurantDetails() {
               <input
                 type="file"
                 className="hidden"
-                onChange={() => alert("Upload not implemented")}
+                onChange={handleProfilePictureUpload}
               />
               <span className="flex items-center space-x-1 justify-center">
-                <CameraIcon className="w-4 h-4" /> {/* Use the HeroIcon here */}
+                <CameraIcon className="w-4 h-4" />
                 <span>Change</span>
               </span>
             </label>
@@ -122,94 +478,128 @@ export default function RestaurantDetails() {
         </div>
 
         <div className="flex flex-col gap-2 w-full max-w-2xl">
-        {editMode ? (
-          <>
-            <input
-              value={restaurant.name}
-              onChange={(e) => setRestaurant({ ...restaurant, name: e.target.value })}
-              className="text-xl font-bold border p-1 rounded"
-            />
-            <textarea
-              value={restaurant.description}
-              onChange={(e) => setRestaurant({ ...restaurant, description: e.target.value })}
-              className="border p-1 rounded"
-            />
-            <input
-              value={restaurant.phone}
-              onChange={(e) => setRestaurant({ ...restaurant, phone: e.target.value })}
-              className="border p-1 rounded"
-            />
-            <div className="flex gap-2 items-center">
-              <label className="text-sm">Hours:</label>
+          {editMode ? (
+            <>
               <input
-                type="time"
-                value={restaurant.startTime}
-                onChange={(e) => setRestaurant({ ...restaurant, startTime: e.target.value })}
+                value={restaurant.Name}
+                onChange={(e) =>
+                  setRestaurant({ ...restaurant, Name: e.target.value })
+                }
+                className="text-xl font-bold border p-1 rounded"
+              />
+              <textarea
+                value={restaurant.Description}
+                onChange={(e) =>
+                  setRestaurant({ ...restaurant, Description: e.target.value })
+                }
                 className="border p-1 rounded"
               />
-              <span>-</span>
               <input
-                type="time"
-                value={restaurant.endTime}
-                onChange={(e) => setRestaurant({ ...restaurant, endTime: e.target.value })}
+                value={restaurant.PhoneNum}
+                onChange={(e) =>
+                  setRestaurant({ ...restaurant, PhoneNum: e.target.value })
+                }
                 className="border p-1 rounded"
               />
-            </div>
-          </>
-        ) : (
-          <>
-            <h1 className="text-3xl font-bold text-theme-pink">{restaurant.name}</h1>
-            <p className="text-sm italic text-gray-700">{restaurant.description}</p>
-            <p><strong>Location:</strong> {restaurant.location}</p>
-            <p>
-              <strong>Operating Hours:</strong> {restaurant.startTime} - {restaurant.endTime}
-            </p>
-            <p><strong>Phone:</strong> {restaurant.phone}</p>
-          </>
-        )}
+              {errorMessage && (
+                <div className="text-red-500 text-sm">{errorMessage}</div>
+              )}
+              <div className="flex gap-2 items-center">
+                <label className="text-sm">Hours:</label>
+                <input
+                  type="time"
+                  value={formatTimeForInput(restaurant.OperatingHoursStart)}
+                  onChange={(e) =>
+                    setRestaurant({
+                      ...restaurant,
+                      OperatingHoursStart: updateTimeInISO(
+                        restaurant.OperatingHoursStart,
+                        e.target.value
+                      ),
+                    })
+                  }
+                  className="border p-1 rounded"
+                />
+                <span>-</span>
+                <input
+                  type="time"
+                  value={formatTimeForInput(restaurant.OperatingHoursEnd)}
+                  onChange={(e) =>
+                    setRestaurant({
+                      ...restaurant,
+                      OperatingHoursEnd: updateTimeInISO(
+                        restaurant.OperatingHoursEnd,
+                        e.target.value
+                      ),
+                    })
+                  }
+                  className="border p-1 rounded"
+                />
+              </div>
+            </>
+          ) : (
+            <>
+              <h1 className="text-3xl font-bold text-theme-pink">
+                {restaurant.Name}
+              </h1>
+              <p className="text-sm italic text-gray-700">
+                {restaurant.Description}
+              </p>
+              <p>
+                <strong>Location:</strong> {restaurant.Location}
+              </p>
+              <p>
+                <strong>Operating Hours:</strong>{" "}
+                {formatTimeForDisplay(restaurant.OperatingHoursStart)} -{" "}
+                {formatTimeForDisplay(restaurant.OperatingHoursEnd)}
+              </p>
+              <p>
+                <strong>Phone:</strong> {restaurant.PhoneNum}
+              </p>
+            </>
+          )}
 
           {/* Cuisines */}
           <div>
             <strong>Cuisines:</strong>
             <div className="flex flex-wrap gap-2 mt-1">
-              {restaurant.cuisines.map((cuisine, i) => (
-                <div
-                  key={i}
-                  className="bg-theme-pink/10 text-theme-pink px-2 py-1 rounded flex items-center gap-1 text-sm"
-                >
-                  {cuisine}
-                  {editMode && (
-                    <button onClick={() => handleCuisineRemove(i)} className="text-red-500">
-                      <TrashIcon className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-              ))}
+              {cuisines.length > 0
+                ? cuisines.map((cuisine, i) => (
+                    <div
+                      key={i}
+                      className="bg-theme-pink/10 text-theme-pink px-2 py-1 rounded flex items-center gap-1 text-sm"
+                    >
+                      {cuisine.CuisineName}
+                      {editMode && (
+                        <button
+                          onClick={() => handleCuisineRemove(i)}
+                          className="text-red-500"
+                        >
+                          <TrashIcon className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  ))
+                : "No cuisines offered!"}
               {editMode && (
                 <div className="flex items-center gap-1">
                   <select
-                    className="border p-1 text-sm rounded"
                     value={newCuisine}
                     onChange={(e) => setNewCuisine(e.target.value)}
+                    className="border p-1 text-sm rounded"
                   >
                     <option value="">Choose Cuisine</option>
-                    {[
-                      "Pakistani",
-                      "Indian",
-                      "Chinese",
-                      "Italian",
-                      "BBQ",
-                      "Fast Food",
-                      "Desserts",
-                      "Continental",
-                      "Middle Eastern",
-                      "Thai",
-                      "Other",
-                    ]
-                      .filter((c) => !restaurant.cuisines.includes(c)) // prevent duplicates
-                      .map((cuisine, idx) => (
-                        <option key={idx} value={cuisine}>
-                          {cuisine}
+                    {allCuisines
+                      .filter(
+                        (c) =>
+                          !cuisines.some((sel) => sel.CuisineName === c.Name)
+                      )
+                      .map((cuisine) => (
+                        <option
+                          key={cuisine.CuisineID}
+                          value={cuisine.CuisineID}
+                        >
+                          {cuisine.Name}
                         </option>
                       ))}
                   </select>
@@ -229,15 +619,21 @@ export default function RestaurantDetails() {
 
       {/* Stats */}
       <div className="bg-white p-8 rounded-lg shadow mb-10">
-        <h2 className="text-2xl font-semibold text-theme-pink mb-4">Restaurant Stats</h2>
+        <h2 className="text-2xl font-semibold text-theme-pink mb-4">
+          Restaurant Stats
+        </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {[
             { label: "Reservations", value: restaurant.totalReservations },
-            { label: "Avg. Rating", value: restaurant.avgRating, icon: <StarIcon className="w-5 h-5 text-yellow-500 inline" /> },
-            { label: "Reviews", value: restaurant.reviewCount },
+            {
+              label: "Avg. Rating",
+              value: restaurant.averageRating,
+              icon: <StarIcon className="w-5 h-5 text-yellow-500 inline" />,
+            },
+            { label: "Reviews", value: restaurant.totalReviews },
             { label: "Revenue", value: `$${restaurant.totalRevenue}` },
-            { label: "Admins", value: restaurant.adminCount },
-            { label: "Staff", value: restaurant.staffCount },
+            { label: "Admins", value: restaurant.numAdmins },
+            { label: "Staff", value: restaurant.numStaff },
           ].map((item, i) => (
             <div key={i} className="bg-gray-100 rounded-lg p-4 shadow">
               <h3 className="text-sm text-gray-600">{item.label}</h3>
@@ -254,60 +650,108 @@ export default function RestaurantDetails() {
       <div className="mb-12">
         <h2 className="text-xl font-semibold text-theme-pink mb-4">Tables</h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-          {restaurant.tables.map((table, i) => (
-            <div key={i} className="border rounded-lg p-4 bg-white shadow relative">
-              <p><strong>Table</strong></p>
+          {tables.length === 0 && !editMode && (
+            <div className="col-span-full text-gray-500 italic">
+              No tables added yet.
+            </div>
+          )}
+
+          {tables.map((table, i) => (
+            <div
+              key={i}
+              className="border rounded-lg p-4 bg-white shadow relative"
+            >
+              <p>
+                <strong>Table {i + 1}</strong>
+              </p>
               <p>Seats: {table.capacity}</p>
               <p>Description: {table.description}</p>
               {editMode && (
-                <button onClick={() => handleTableRemove(i)} className="absolute top-1 right-1 text-red-500">
+                <button
+                  onClick={() => handleTableRemove(i)}
+                  className="absolute top-1 right-1 text-red-500"
+                >
                   <TrashIcon className="w-4 h-4" />
                 </button>
               )}
             </div>
           ))}
+
           {editMode && (
             <div className="border-dashed border-2 rounded-lg p-4 flex flex-col gap-2 justify-center items-center text-sm">
-              <input placeholder="Capacity" className="border p-1 w-full rounded" value={newTable.capacity} onChange={(e) => setNewTable({ ...newTable, capacity: e.target.value })} />
-              <input placeholder="Description" className="border p-1 w-full rounded" value={newTable.description} onChange={(e) => setNewTable({ ...newTable, description: e.target.value })} />
-              <button onClick={handleTableAdd} className="text-theme-pink"><PlusIcon className="w-5 h-5" /></button>
+              <input
+                type="number"
+                min="1"
+                placeholder="Capacity"
+                className="border p-1 w-full rounded"
+                value={newTable.capacity}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value === "" || Number(value) > 0) {
+                    setNewTable({ ...newTable, capacity: value });
+                  }
+                }}
+              />
+              <input
+                placeholder="Description"
+                className="border p-1 w-full rounded"
+                value={newTable.description}
+                onChange={(e) =>
+                  setNewTable({ ...newTable, description: e.target.value })
+                }
+              />
+              <button onClick={handleTableAdd} className="text-theme-pink">
+                <PlusIcon className="w-5 h-5" />
+              </button>
             </div>
           )}
         </div>
       </div>
       {/* Restaurant Images Section */}
       <div className="pb-16 mt-16">
-        <h2 className="text-2xl font-semibold text-theme-pink mb-4">Restaurant Images</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-        {restaurant.galleryImages.map((src, i) => (
-          <div key={i} className="relative group">
-            <img
-              src={src}
-              alt={`Gallery ${i}`}
-              className="w-full h-48 object-cover rounded shadow"
-            />
+        <h2 className="text-2xl font-semibold text-theme-pink mb-4">
+          Restaurant Images
+        </h2>
+
+        {images.length === 0 && !editMode ? (
+          <p className="text-gray-500 italic">
+            No images available for this restaurant.
+          </p>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            {images.map((src, i) => (
+              <div key={i} className="relative group">
+                <img
+                  src={src.url}
+                  alt={`Gallery ${i}`}
+                  className="w-full h-48 object-cover rounded shadow"
+                />
+                {editMode && (
+                  <button
+                    onClick={() => handleImageRemove(i)}
+                    className="absolute top-2 right-2 bg-white p-1 rounded-full shadow text-red-500"
+                  >
+                    <TrashIcon className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            ))}
+
             {editMode && (
-              <button
-                onClick={() => handleImageRemove(i)}
-                className="absolute top-2 right-2 bg-white p-1 rounded-full shadow text-red-500"
-              >
-                <TrashIcon className="w-4 h-4" />
-              </button>
+              <label className="border-dashed border-2 rounded-lg p-4 flex flex-col gap-2 justify-center items-center text-sm cursor-pointer text-theme-pink hover:bg-theme-pink/5 transition">
+                <PlusIcon className="w-6 h-6" />
+                Add Image
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+              </label>
             )}
           </div>
-        ))}
-        {editMode && (
-          <label className="border-dashed border-2 rounded-lg p-4 flex flex-col gap-2 justify-center items-center text-sm cursor-pointer text-theme-pink hover:bg-theme-pink/5 transition">
-            <PlusIcon className="w-6 h-6" />
-            Add Image
-            <input
-              type="file"
-              className="hidden"
-              onChange={() => alert("Upload not implemented")}
-            />
-          </label>
         )}
-      </div>
       </div>
     </div>
   );

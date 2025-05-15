@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
+import {
+  MagnifyingGlassIcon,
+  ArrowPathIcon,
+} from "@heroicons/react/24/outline";
 import axios from "axios";
 import defaultRestaurantImage from "../../assets/default-restaurant.png";
 
@@ -136,7 +139,12 @@ const Restaurants = () => {
     );
   };
 
-  if (loading) return null;
+  if (loading)
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <ArrowPathIcon className="h-5 w-5 animate-spin text-theme-pink" />
+      </div>
+    );
 
   return (
     <div className="h-screen flex flex-col">

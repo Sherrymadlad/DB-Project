@@ -74,6 +74,78 @@ module.exports = {
     }
   },
 
+  //Get total Reservations
+    getTotalReservations: async (restaurantId) => {
+    try {
+      const pool = await poolPromise;
+      const result = await pool.request()
+        .input('RestaurantID', sql.Int, restaurantId)
+        .query(`
+          SELECT COUNT(*) AS CountReservation
+          FROM Reservations R
+          JOIN Tables T on R.TableID = T.TableID
+          WHERE T.RestaurantID = @RestaurantID;
+        `);
+      return result.recordset[0]?.CountReservation || 0;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  },
+
+    //Get total Revenue
+    getTotalRevenue: async (restaurantId) => {
+    try {
+      const pool = await poolPromise;
+      const result = await pool.request()
+        .input('RestaurantID', sql.Int, restaurantId)
+        .query(`
+          SELECT SUM(P.Amount) AS TotalRevenue
+          FROM Payments P
+          JOIN Reservations R ON P.ReservationID = R.ReservationID
+          JOIN Tables T ON R.TableID = T.TableID
+          WHERE T.RestaurantID = @RestaurantID
+            AND P.Status = 'Completed';
+        `);
+      return result.recordset[0]?.TotalRevenue || 0;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  },
+
+      //Get No. of Admins
+    getNoOfAdmins: async (restaurantId) => {
+    try {
+      const pool = await poolPromise;
+      const result = await pool.request()
+        .input('RestaurantID', sql.Int, restaurantId)
+        .query(`
+          SELECT COUNT(*) AS numAdmins
+          FROM RestaurantAdmins
+          WHERE RestaurantID = @RestaurantID;
+        `);
+      return result.recordset[0]?.numAdmins || 0;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  },
+
+        //Get No. of Staff
+    getNoOfStaff: async (restaurantId) => {
+    try {
+      const pool = await poolPromise;
+      const result = await pool.request()
+        .input('RestaurantID', sql.Int, restaurantId)
+        .query(`
+          SELECT COUNT(*) AS numStaff
+          FROM RestaurantStaff
+          WHERE RestaurantID = @RestaurantID;
+        `);
+      return result.recordset[0]?.numStaff || 0;
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  },
+
   // Delete review
   deleteReview: async (reviewId, userId) => {
     try {

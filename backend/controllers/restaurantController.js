@@ -54,9 +54,25 @@ const RestaurantController = {
     if (!errors.isEmpty()) {
       return res.status(400).json({ success: false, message: 'Validation errors', errors: errors.array() });
     }
-
     try {
-      const response = await RestaurantModel.updateRestaurant(req.body);
+      const {
+UserID,RestaurantID,
+  Name,
+  Description,
+  Location,
+  PhoneNum,
+  OperatingHoursStart, OperatingHoursEnd, Status
+} = req.body;
+
+const profilePicBuffer = req.file ? req.file.buffer : null;
+
+      const response = await RestaurantModel.updateRestaurant(UserID,RestaurantID,
+  Name,
+  Description,
+  Location,
+  PhoneNum,
+  OperatingHoursStart, OperatingHoursEnd, Status, 
+  profilePicBuffer);
       if (!response.success) {
         return res.status(400).json({ success: false, message: response.message });
       }
@@ -278,16 +294,16 @@ const RestaurantController = {
   },
 
   //Remove cuisine
-  removeCuisineFromRestaurant: async (req, res) => {
-    const { RestaurantID, CuisineID } = req.body;
-    try {
-      const result = await RestaurantModel.removeCuisineFromRestaurant({ RestaurantID, CuisineID });
-      if (!result.success) return res.status(400).json(result);
-      return res.status(200).json({ success: true, message: result.message });
-    } catch (error) {
-      return res.status(500).json({ success: false, message: 'Error removing cuisine', error: error.message });
-    }
-  },
+    removeCuisineFromRestaurant: async (req, res) => {
+      const { RestaurantID, CuisineID } = req.query;
+      try {
+        const result = await RestaurantModel.removeCuisineFromRestaurant({ RestaurantID, CuisineID });
+        if (!result.success) return res.status(400).json(result);
+        return res.status(200).json({ success: true, message: result.message });
+      } catch (error) {
+        return res.status(500).json({ success: false, message: 'Error removing cuisine', error: error.message });
+      }
+    },
 
   //Get restaurant's offered cuisines
   getCuisinesForRestaurant: async (req, res) => {

@@ -524,35 +524,47 @@ CREATE OR ALTER PROCEDURE UpdateRestaurant
 AS
 BEGIN
     -- Check if restaurant exists
-    IF NOT EXISTS (SELECT 1
-    FROM Restaurants
-    WHERE RestaurantID = @RestaurantID)
+    IF NOT EXISTS (
+        SELECT 1
+        FROM Restaurants
+        WHERE RestaurantID = @RestaurantID
+    )
     BEGIN
         RAISERROR ('Restaurant not found.', 16, 1);
         RETURN;
     END
 
     -- Check if user is Admin
-    IF EXISTS (SELECT 1
-    FROM RestaurantAdmins
-    WHERE UserID = @UserID AND RestaurantID = @RestaurantID)
+    IF EXISTS (
+        SELECT 1
+        FROM RestaurantAdmins
+        WHERE UserID = @UserID AND RestaurantID = @RestaurantID
+    )
     BEGIN
         -- VALIDATION (only validate if value is provided)
-        IF @PhoneNum IS NOT NULL AND (LEN(@PhoneNum) < 10 OR LEN(@PhoneNum) > 13)
+        IF @PhoneNum IS NOT NULL 
         BEGIN
-            RAISERROR ('Phone number must be between 10 and 13 digits.', 16, 1);
-            RETURN;
+            IF LEN(@PhoneNum) < 10 OR LEN(@PhoneNum) > 13
+            BEGIN
+                RAISERROR ('Phone number must be between 10 and 13 digits.', 16, 1);
+                RETURN;
+            END
+
+            -- Check for duplicate phone number in other restaurants
+            IF EXISTS (
+                SELECT 1
+                FROM Restaurants
+                WHERE PhoneNum = @PhoneNum AND RestaurantID <> @RestaurantID
+            )
+            BEGIN
+                RAISERROR ('Phone number already in use by another restaurant.', 16, 1);
+                RETURN;
+            END
         END
 
-        IF @OperatingHoursStart IS NOT NULL AND @OperatingHoursEnd IS NOT NULL AND @OperatingHoursStart >= @OperatingHoursEnd
+        IF @Status IS NOT NULL AND @Status NOT IN ('Open', 'Closed')
         BEGIN
-            RAISERROR ('OperatingHoursStart must be earlier than OperatingHoursEnd.', 16, 1);
-            RETURN;
-        END
-
-        IF @Status IS NOT NULL AND @Status NOT IN ('Open', 'Closed', 'Inactive')
-        BEGIN
-            RAISERROR ('Invalid status. Allowed values: Open, Closed, Inactive.', 16, 1);
+            RAISERROR ('Invalid status. Allowed values: Open, Closed.', 16, 1);
             RETURN;
         END
 
@@ -572,16 +584,12 @@ BEGIN
     END
 
     -- If user is a Staff
-    IF EXISTS (SELECT 1
-    FROM RestaurantStaff
-    WHERE UserID = @UserID AND RestaurantID = @RestaurantID)
+    IF EXISTS (
+        SELECT 1
+        FROM RestaurantStaff
+        WHERE UserID = @UserID AND RestaurantID = @RestaurantID
+    )
     BEGIN
-        -- VALIDATION for staff updates
-        IF @OperatingHoursStart IS NOT NULL AND @OperatingHoursEnd IS NOT NULL AND @OperatingHoursStart >= @OperatingHoursEnd
-        BEGIN
-            RAISERROR ('OperatingHoursStart must be earlier than OperatingHoursEnd.', 16, 1);
-            RETURN;
-        END
 
         IF @Status IS NOT NULL AND @Status NOT IN ('Open', 'Closed', 'Inactive')
         BEGIN
@@ -1848,8 +1856,6 @@ BEGIN
         AND (@Status IS NULL OR R.Status = @Status)
     ORDER BY 
         R.Time DESC
-    OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY;
--- optional paging
 END;
 GO
 
@@ -1977,6 +1983,30 @@ FROM Reviews
 WHERE RestaurantID = @RestaurantID
 GROUP BY RestaurantID;
 GO
+
+--No. of Reservations of a Restaurant
+SELECT COUNT(*) AS CountReservation
+FROM Reservations R
+JOIN Tables T on R.TableID = T.TableID
+WHERE T.RestaurantID = @RestaurantID
+
+--Get Total Revenue
+SELECT SUM(P.Amount) AS TotalRevenue
+FROM Payments P
+JOIN Reservations R ON P.ReservationID = R.ReservationID
+JOIN Tables T ON R.TableID = T.TableID
+WHERE T.RestaurantID = @RestaurantID
+  AND P.Status = 'Completed';
+
+--Get No. of Admins
+SELECT COUNT(*) AS numAdmins
+FROM RestaurantAdmins
+WHERE RestaurantID = @RestaurantID;
+
+--Get No. of Staff
+SELECT COUNT(*) AS numStaff
+FROM RestaurantStaff
+WHERE RestaurantID = @RestaurantID;
 
 -- Delete a review (user deletion only)
 CREATE OR ALTER PROCEDURE DeleteReview
