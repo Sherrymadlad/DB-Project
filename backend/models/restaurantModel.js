@@ -56,9 +56,8 @@ const RestaurantModel = {
   },
 
   // Update an existing restaurant
-  updateRestaurant: async (data) => {
+  updateRestaurant: async (UserID, RestaurantID, Name, Description, Location, PhoneNum, OperatingHoursStart, OperatingHoursEnd, Status, ProfilePic = null) => {
     try {
-      const { UserID, RestaurantID, Name, Description, Location, PhoneNum, OperatingHoursStart, OperatingHoursEnd, Status, ProfilePic } = data;
       const pool = await poolPromise;
       const request = pool.request()
         .input('UserID', sql.Int, UserID)
