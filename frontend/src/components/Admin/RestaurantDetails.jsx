@@ -11,9 +11,9 @@ export default function RestaurantDetails() {
   const [newCuisine, setNewCuisine] = useState("");
   const [newTable, setNewTable] = useState({ description: "", capacity: "" });
   const [restaurant, setRestaurant] = useState(null);
-  const [images, setImages] = useState([]); // existing
-  const [newImages, setNewImages] = useState([]); // for newly added
-  const [deletedImageUrls, setDeletedImageUrls] = useState([]); // for removed images (original ones)
+  const [images, setImages] = useState([]);
+  const [newImages, setNewImages] = useState([]);
+  const [deletedImageUrls, setDeletedImageUrls] = useState([]);
   const [cuisines, setCuisines] = useState([]);
   const [allCuisines, setAllCuisines] = useState([]);
   const [deletedCuisineIds, setDeletedCuisineIds] = useState([]);
@@ -54,7 +54,7 @@ export default function RestaurantDetails() {
               const byteArray = new Uint8Array(imgBuffer.Image.data);
               const blob = new Blob([byteArray], { type: "image/jpeg" });
               const url = URL.createObjectURL(blob);
-              return { url, ImageID: imgBuffer.ImageID, isNew: false }; // 👈 matches format of uploaded images
+              return { url, ImageID: imgBuffer.ImageID, isNew: false };
             })
         : [];
 
@@ -325,7 +325,7 @@ export default function RestaurantDetails() {
           );
         }
 
-        // ✅ Add new tables
+        // Add new tables
         for (const table of newTables) {
           await axios.post("http://localhost:5000/api/tables", {
             userId,
@@ -335,7 +335,7 @@ export default function RestaurantDetails() {
           });
         }
 
-        // ✅ Delete removed tables
+        // Delete removed tables
         for (const tableId of deletedTableIds) {
           await axios.delete(`http://localhost:5000/api/tables/${tableId}`, {
             data: { userId },
