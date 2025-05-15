@@ -36,8 +36,8 @@ const NewRestaurant = () => {
   const [cuisines, setCuisines] = useState([]);
   const userId = localStorage.getItem("userId");
   const [errors, setErrors] = useState({});
-  const [submitError, setSubmitError] = useState(""); // For error messages
-  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false); // For modal visibility
+  const [submitError, setSubmitError] = useState("");
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [restaurantId, setRestaurantId] = useState(null);
 
   const mapRef = useRef(null);
@@ -98,11 +98,10 @@ const NewRestaurant = () => {
 
   const handleCuisineChange = (e, cuisine) => {
     const isChecked = e.target.checked;
-    setSelectedCuisines(
-      (prev) =>
-        isChecked
-          ? [...prev, cuisine] // Add the entire cuisine object if checked
-          : prev.filter((c) => c.CuisineID !== cuisine.CuisineID) // Remove based on CuisineID
+    setSelectedCuisines((prev) =>
+      isChecked
+        ? [...prev, cuisine]
+        : prev.filter((c) => c.CuisineID !== cuisine.CuisineID)
     );
   };
 
@@ -204,7 +203,7 @@ const NewRestaurant = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitError(""); // Reset any existing errors
+    setSubmitError("");
     const newErrors = {};
 
     if (!formData.name.trim()) newErrors.name = "Restaurant name is required.";
@@ -262,7 +261,7 @@ const NewRestaurant = () => {
       await addCuisines(RestaurantID);
       await addTables(RestaurantID);
 
-      setIsSuccessModalOpen(true); // Open success modal
+      setIsSuccessModalOpen(true);
     } catch (err) {
       console.error("Submit error:", err);
       if (
@@ -368,7 +367,7 @@ const NewRestaurant = () => {
                 {cuisines.map((cuisine) => {
                   const isSelected = selectedCuisines.some(
                     (c) => c.CuisineID === cuisine.CuisineID
-                  ); // Check if this cuisine is selected
+                  );
                   return (
                     <label
                       key={cuisine.CuisineID}
@@ -379,7 +378,7 @@ const NewRestaurant = () => {
                       <input
                         type="checkbox"
                         checked={isSelected}
-                        onChange={(e) => handleCuisineChange(e, cuisine)} // Pass the cuisine object
+                        onChange={(e) => handleCuisineChange(e, cuisine)}
                         className="accent-pink-500"
                       />
                       {cuisine.Name}
