@@ -74,8 +74,6 @@ const Profile = () => {
       const res = await axios.get(`http://localhost:5000/api/users/${userId}`);
 
       const { ProfilePic, ...baseUser } = res.data;
-
-      // Fetch preferences and favorites
       const [cuisinesRes, restaurantsRes] = await Promise.all([
         axios.get(
           `http://localhost:5000/api/users/${userId}/cuisine-preferences`
@@ -97,16 +95,12 @@ const Profile = () => {
       setFormData(sanitizedData);
       setOriginalPreferences(sanitizedData.preferences);
       setOriginalFavorites(sanitizedData.favorites);
-
-      // Fetch all cuisines and restaurants
       const [cuisinesFetch, restaurantsFetch] = await Promise.all([
         axios.get("http://localhost:5000/api/cuisines"),
         axios.get("http://localhost:5000/api/restaurants"),
       ]);
       setAllCuisines(cuisinesFetch.data.data);
       setAllRestaurants(restaurantsFetch.data.data);
-
-      // Handle ProfilePic
       const buffer = ProfilePic;
       if (buffer?.data) {
         const byteArray = new Uint8Array(buffer.data);
@@ -203,7 +197,6 @@ const Profile = () => {
 
     // === BACKEND CALLS ===
     try {
-      // 1. Update user info
       try {
         const formDataToSend = new FormData();
         formDataToSend.append("name", Name);
@@ -249,15 +242,12 @@ const Profile = () => {
             ...prev,
             ...fieldErrors,
           }));
-          // Don't throw a new error message that will override it
           throw null;
         } else {
-          // No specific field errors, fall back to generic
           throw new Error("Failed to update user info.");
         }
       }
 
-      // 2. Update password if applicable
       if (oldPassword && newPassword) {
         try {
           await axios.post("http://localhost:5000/api/users/change-password", {
@@ -274,7 +264,6 @@ const Profile = () => {
         }
       }
 
-      // 3. Update cuisine preferences
       try {
         const oldCuisineIds = originalPreferences.map((c) => c.CuisineID);
         const newCuisineIds = Array.isArray(preferences)
@@ -341,14 +330,13 @@ const Profile = () => {
         throw new Error("Failed to update restaurant preferences.");
       }
 
-      // Final cleanup
       setEditMode(false);
       setOldPassword("");
       setNewPassword("");
       await fetchUserDetails();
     } catch (err) {
       console.error("Update Error:", err);
-      if (!err) return; // Skip if already handled field-specific errors
+      if (!err) return; 
 
       if (typeof err === "string" || err instanceof Error) {
         setErrors((prev) => ({
@@ -368,11 +356,7 @@ const Profile = () => {
   const handleDeleteAccount = async () => {
     try {
       await axios.delete(`http://localhost:5000/api/users/${userId}`);
-
-      // Clear all user-related data
       localStorage.clear();
-
-      // Navigate to homepage
       navigate("/");
     } catch (err) {
       console.error("Failed to delete account:", err);
@@ -381,7 +365,6 @@ const Profile = () => {
 
   const addItemToList = (field, value) => {
     setFormData((prev) => {
-      // Check for duplicate by Name
       const alreadyExists = prev[field].some(
         (item) => item.Name === value.Name
       );

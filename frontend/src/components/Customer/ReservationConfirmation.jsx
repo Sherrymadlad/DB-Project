@@ -11,7 +11,6 @@ const ReservationConfirmation = () => {
   const [tables, setTables] = useState([]);
   const [capacity, setCapacity] = useState("");
 
-  // Fetch restaurant name
   useEffect(() => {
     const fetchRestaurantName = async () => {
       if (!restaurantId) return;
@@ -27,7 +26,6 @@ const ReservationConfirmation = () => {
     fetchRestaurantName();
   }, [restaurantId]);
 
-  // Fetch filtered tables
   const fetchTables = async (capacityValue) => {
     try {
       const res = await axios.get(
@@ -49,7 +47,6 @@ const ReservationConfirmation = () => {
     }
   };
 
-  // Fetch tables on mount or capacity change
   useEffect(() => {
     if (restaurantId) {
       fetchTables(capacity);

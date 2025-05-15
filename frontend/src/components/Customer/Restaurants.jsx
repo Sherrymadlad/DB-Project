@@ -14,8 +14,8 @@ const Restaurants = () => {
   const [cuisinePrefs, setCuisinePrefs] = useState([]);
   const [location, setLocation] = useState("");
   const [sortBy, setSortBy] = useState("Name");
-  const [loading, setLoading] = useState(true); // Manage loading state
-  const [error, setError] = useState(""); // Manage error state
+  const [loading, setLoading] = useState(true); 
+  const [error, setError] = useState(""); 
   const userId = localStorage.getItem("userId");
   const imageUrlCache = useRef({});
   const createdUrls = useRef(new Set());
@@ -226,7 +226,7 @@ const Restaurants = () => {
                     <div className="text-sm text-gray-500">Sort By</div>
                     <select
                       className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-theme-pink focus:border-theme-pink"
-                      onChange={(e) => setSortBy(e.target.value)} // Update the sortBy state
+                      onChange={(e) => setSortBy(e.target.value)} 
                     >
                       <option value="Name">Name</option>
                       <option value="Rating">Rating</option>
@@ -235,7 +235,7 @@ const Restaurants = () => {
                   <div className="w-full flex flex-col gap-1">
                     <div className="text-sm text-gray-500">Location</div>
                     <select
-                      value={location} // ✅ This is what was missing
+                      value={location}
                       className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-theme-pink focus:border-theme-pink"
                       onChange={(e) => setLocation(e.target.value)}
                     >
