@@ -235,11 +235,11 @@ const Restaurants = () => {
                   <div className="w-full flex flex-col gap-1">
                     <div className="text-sm text-gray-500">Location</div>
                     <select
+                      value={location} // ✅ This is what was missing
                       className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-theme-pink focus:border-theme-pink"
-                      onChange={(e) => setLocation(e.target.value)} // Update the location state
+                      onChange={(e) => setLocation(e.target.value)}
                     >
-                      <option value="">All</option>{" "}
-                      {/* Empty value to signify all locations */}
+                      <option value="">All</option>
                       <option value="Lahore">Lahore</option>
                       <option value="Islamabad">Islamabad</option>
                       <option value="Karachi">Karachi</option>
